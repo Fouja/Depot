@@ -55,9 +55,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/generate-pdf/{numero}', [PDFController::class, 'generatePDF'])->name('generate-pdf');
         
     // Statistics
-    Route::get('/statistics', function () {
-        return Inertia::render('Statistics');
-    })->name('statistics');
+    Route::get('/statistics', [StatisticController::class, 'index'])->name('statistics');
+    Route::get('/statistics/graphs', [StatisticController::class, 'graphs'])->name('statistics.graphs');
+    Route::get('/statistics/transactions', [StatisticController::class, 'transactions'])->name('statistics.transactions');
+    Route::get('/statistics/envoyeurs', [StatisticController::class, 'envoyeurs'])->name('statistics.envoyeurs');
 });
 
 // Remove these duplicate routes that were outside the auth middleware
