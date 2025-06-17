@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { router } from '@inertiajs/react';
-
+import PerteModal from '@/Components/PerteModal';
 interface Transfert {
     id: number;
     produit_id: string;
@@ -22,11 +22,7 @@ interface Transfert {
 }
 
 export default function ProduitsTransferes() {
-    // Change this line to access the correct prop name
     const props = usePage().props;
-    console.log('Props received:', props); // Debug log
-    
-    // Try both possible prop names
     const transferts = props.transferts || props.produitsTransferes || [];
     
     const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +30,16 @@ export default function ProduitsTransferes() {
     const [sortField, setSortField] = useState('date_transfert');
     const [sortDirection, setSortDirection] = useState('desc');
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Add these state variables for the modal INSIDE the component
+    const [isPerteModalOpen, setIsPerteModalOpen] = useState(false);
+    const [selectedTransfertPerte, setSelectedTransfertPerte] = useState<Transfert | null>(null);
+    
+    // Add the modal opening handler function INSIDE the component
+    const openPerteModal = (transfert: Transfert) => {
+        setSelectedTransfertPerte(transfert);
+        setIsPerteModalOpen(true);
+    };
     
     // Simulate loading effect
     useEffect(() => {
@@ -386,10 +392,52 @@ export default function ProduitsTransferes() {
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button
                                                         onClick={() => handleReturnToDepot(transfert.id)}
-                                                        className="text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-md transition-colors duration-200"
+                                                        className="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded-full transition-colors duration-200 mr-2"
                                                     >
-                                                        Récupérer au Dépôt
+                                                        Récupérer
                                                     </button>
+                                                    
+                                                  
+                                                    <button
+                                                      onClick={() => openPerteModal(transfert)}
+                                                      className="text-red-500 hover:text-red-700"
+                                                    >
+                                                      🗑️ Perte
+                                                    </button>
+                                                
+                                                    {isPerteModalOpen && selectedTransfertPerte && (
+                                                      <PerteModal
+                                                        produit={{...selectedTransfertPerte, produit_id: parseInt(selectedTransfertPerte?.produit_id || '0')}}
+                                                        isTransfer={true}
+                                                        onClose={() => setIsPerteModalOpen(false)}
+                                                        onConfirm={(qty: number, description: string) => {
+                                                          console.log('ProduitsTransferes - onConfirm called with:', {
+                                                              produit_id: selectedTransfertPerte.produit_id,
+                                                              transfert_id: selectedTransfertPerte.id,
+                                                              quantite: qty,
+                                                              description: description
+                                                          });
+                                                          
+                                                          // Prevent closing the modal until the request completes
+                                                          router.post('/produits/perdre', {
+                                                              produit_id: selectedTransfertPerte.produit_id,
+                                                              transfert_id: selectedTransfertPerte.id,
+                                                              quantite: qty,
+                                                              description: description
+                                                          }, {
+                                                              preserveScroll: true,
+                                                              onSuccess: () => {
+                                                                  console.log('ProduitsTransferes - POST request successful');
+                                                                  setIsPerteModalOpen(false);
+                                                                  router.reload();
+                                                              },
+                                                              onError: (errors) => {
+                                                                  console.error('ProduitsTransferes - POST request failed:', errors);
+                                                              }
+                                                          });
+                                                      }}
+                                                    />
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))
@@ -402,6 +450,41 @@ export default function ProduitsTransferes() {
                                     )}
                                 </tbody>
                             </table>
+                            
+                            {/* Perte Modal - Moved outside of tbody */}
+                            {isPerteModalOpen && selectedTransfertPerte && (
+                              <PerteModal
+                                produit={{...selectedTransfertPerte, produit_id: Number(selectedTransfertPerte?.produit_id)}}
+                                isTransfer={true}
+                                onClose={() => setIsPerteModalOpen(false)}
+                                onConfirm={(qty: number, description: string) => {
+                                  console.log('ProduitsTransferes - onConfirm called with:', {
+                                      produit_id: selectedTransfertPerte.produit_id,
+                                      transfert_id: selectedTransfertPerte.id,
+                                      quantite: qty,
+                                      description: description
+                                  });
+                                  
+                                  // Prevent closing the modal until the request completes
+                                  router.post('/produits/perdre', {
+                                      produit_id: selectedTransfertPerte.produit_id,
+                                      transfert_id: selectedTransfertPerte.id,
+                                      quantite: qty,
+                                      description: description
+                                  }, {
+                                      preserveScroll: true,
+                                      onSuccess: () => {
+                                          console.log('ProduitsTransferes - POST request successful');
+                                          setIsPerteModalOpen(false);
+                                          router.reload();
+                                      },
+                                      onError: (errors) => {
+                                          console.error('ProduitsTransferes - POST request failed:', errors);
+                                      }
+                                  });
+                                }}
+                              />
+                            )}
                         </div>
                     )}
                 </div>

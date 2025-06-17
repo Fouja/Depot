@@ -22,8 +22,11 @@ return new class extends Migration {
             $table->string('marque')->nullable();
             $table->text('description')->nullable();
             $table->string('image_url')->nullable();
+            $table->decimal('prix_unitaire', 12, 2)->default(0);
+            $table->decimal('prix_total', 12, 2)->default(0);
             $table->timestamps();
         });
+        
     }
 
     public function down()

@@ -37,7 +37,7 @@ export default function StatisticsEnvoyeurs({ envoyeurStats, filters }: Envoyeur
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
                             <div className="flex justify-between items-center mb-6">
-                                <h1 className="text-2xl font-bold">Statistiques par Envoyeur</h1>
+                                <h1 className="text-2xl font-bold">Statistiques par Fournisseur</h1>
                                 <button 
                                     onClick={() => router.get('/statistics')} 
                                     className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
@@ -74,7 +74,7 @@ export default function StatisticsEnvoyeurs({ envoyeurStats, filters }: Envoyeur
                                 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Rechercher un envoyeur
+                                        Rechercher un Fournisseur
                                     </label>
                                     <input
                                         type="text"
@@ -92,7 +92,7 @@ export default function StatisticsEnvoyeurs({ envoyeurStats, filters }: Envoyeur
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Envoyeur
+                                                Fournisseur
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Nombre de Bons

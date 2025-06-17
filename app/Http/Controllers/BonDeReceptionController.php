@@ -37,16 +37,24 @@ class BonDeReceptionController extends Controller
             'produits.*.dosage' => 'nullable|string',
             'produits.*.description' => 'nullable|string',
             'produits.*.unite' => 'required|in:pièce,kg,litre,mètre',
+            'produits.*.prix_unitaire' => 'required|numeric|min:0', // Ajouté
         ]);
 
         $imagePath = $request->file('image') ? $request->file('image')->store('bon-images', 'public') : null;
+
+        // Calcul du prix total du bon
+        $prixTotal = 0;
+        foreach ($validated['produits'] as $produitData) {
+            $prixTotal += ($produitData['quantite'] * $produitData['prix_unitaire']);
+        }
 
         $bon = \App\Models\BonsDeReception::create([
             'numero' => $validated['numero'],
             'date' => $validated['date'],
             'envoyeur' => $validated['envoyeur'],
             'type' => $validated['produits'][0]['type'],
-            'image_path' => $imagePath
+            'image_path' => $imagePath,
+            'prix_total' => $prixTotal, // Ajouté
         ]);
 
         foreach ($validated['produits'] as $produitData) {
@@ -59,10 +67,12 @@ class BonDeReceptionController extends Controller
                 'peremption' => $produitData['peremption'],
                 'marque' => $produitData['marque'],
                 'dosage' => $produitData['dosage'],
-                'description' => $produitData['description']
+                'description' => $produitData['description'],
+                'prix_unitaire' => $produitData['prix_unitaire'], // Ajouté
+                'prix_total' => $produitData['quantite'] * $produitData['prix_unitaire'], // Ajouté
             ]);
         }
 
-        return redirect()->route('generate-pdf', ['numero' => $bon->numero]);
+        return redirect()->route('generate-pdf', ['bon_id' => $bon->id]);
     }
 }

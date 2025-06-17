@@ -17,7 +17,9 @@ class Produit extends Model
         'marque',
         'description',
         'dosage',
-        'image_url'
+        'image_url',
+        'prix_unitaire',
+        'prix_total',
     ];
 
     public function bon(): BelongsTo

@@ -31,12 +31,12 @@
 <body>
     <div class="header">
         <div class="logo-container">
-            <img src="{{ public_path('images/garden.png') }}" style="height: 80px; width: auto;">
+            <img src="file:///C:/Users/asus/Desktop/lotfi/depo/public/images/garden.png" style="height:80px;">
         </div>
         <div class="header-text">
             <h1>Bon de Réception #{{ $bon->numero }}</h1>
             <p>Date: {{ $bon->date }}</p>
-            <p>Envoyeur: {{ $bon->envoyeur }}</p>
+            <p>Fournisseur: {{ $bon->envoyeur }}</p>
         </div>
         <div style="clear: both;"></div>
         <hr style="border: 1px solid #000;">
@@ -52,6 +52,8 @@
                 <th>Marque</th>
                 <th>Dosage</th>
                 <th>Péremption</th>
+                <th>Prix unitaire</th>
+                <th>Prix total</th>
             </tr>
         </thead>
         <tbody>
@@ -63,9 +65,15 @@
                 <td>{{ $produit->marque }}</td>
                 <td>{{ $produit->dosage }}</td>
                 <td>{{ $produit->peremption }}</td>
+                <td>{{ number_format($produit->prix_unitaire, 2, ',', ' ') }} DA</td>
+                <td>{{ number_format($produit->prix_total, 2, ',', ' ') }} DA</td>
             </tr>
             @endforeach
         </tbody>
     </table>
+
+    <div style="margin-top: 20px; text-align: right; font-weight: bold;">
+        Prix total du bon : {{ number_format($bon->prix_total, 2, ',', ' ') }} DA
+    </div>
 </body>
 </html>

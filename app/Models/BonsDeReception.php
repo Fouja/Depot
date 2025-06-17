@@ -21,7 +21,8 @@ class BonsDeReception extends Model
         'peremption',
         'marque',
         'image_path',
-        'description'
+        'description',
+        'prix_total',
     ];
 
     protected $casts = [

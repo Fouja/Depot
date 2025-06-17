@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-
+import PerteModal from '@/Components/PerteModal';
 interface Produit {
+    id: number;
     nom: string;
     quantite: number;
     unite: string;
@@ -10,6 +11,8 @@ interface Produit {
     marque?: string;
     dosage?: string;
     image_url?: string;
+    prix_unitaire?: number; // Ajouté
+    prix_total?: number;    // Ajouté
 }
 
 export default function ProduitsDepot() {
@@ -26,7 +29,8 @@ export default function ProduitsDepot() {
     const [transferDestination, setTransferDestination] = useState('');
     const [transferType, setTransferType] = useState('interne');
     const [customName, setCustomName] = useState('');
-    
+    const [isPerteModalOpen, setIsPerteModalOpen] = useState(false);
+    const [selectedProduitPerte, setSelectedProduitPerte] = useState<Produit | null>(null);
     // Simulate loading effect
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -73,6 +77,12 @@ export default function ProduitsDepot() {
     const totalQuantity = useMemo(() => {
         if (!Array.isArray(produits)) return 0;
         return produits.reduce((sum, produit) => sum + produit.quantite, 0);
+    }, [produits]);
+    
+    // Calculate total value of all products (not just filtered)
+    const totalValeurProduits = useMemo(() => {
+        if (!Array.isArray(produits)) return 0;
+        return produits.reduce((sum, produit) => sum + (produit.prix_total || 0), 0);
     }, [produits]);
     
     // Handle sort
@@ -223,6 +233,18 @@ export default function ProduitsDepot() {
                             </div>
                         </div>
                     </div>
+                    
+                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+                        <div className="flex items-center">
+                            <div className="p-3 rounded-full bg-yellow-100 mr-4">
+                                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z"></path></svg>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium">Valeur totale des produits présents</p>
+                                <p className="text-xl font-bold text-gray-800">{totalValeurProduits.toFixed(2)} DA</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 {/* Products table */}
@@ -278,6 +300,12 @@ export default function ProduitsDepot() {
                                         >
                                             Unité {getSortIcon('unite')}
                                         </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
+                                            Prix unitaire
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
+                                            Prix total
+                                        </th>
                                         <th 
                                             scope="col" 
                                             className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider"
@@ -316,6 +344,12 @@ export default function ProduitsDepot() {
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.dosage || '-'}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.unite}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                {produit.prix_unitaire !== undefined ? produit.prix_unitaire.toFixed(2) + ' DA' : '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                {produit.prix_total !== undefined ? produit.prix_total.toFixed(2) + ' DA' : '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                                                 {produit.image_url ? (
                                                     <img 
                                                         src={produit.image_url} 
@@ -333,14 +367,18 @@ export default function ProduitsDepot() {
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
                                                     onClick={() => openTransferModal(produit)}
-                                                    className="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-full transition-colors duration-200"
+                                                    className="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-full transition-colors duration-200 mr-2"
                                                 >
-                                                    <span className="flex items-center">
-                                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4"></path>
-                                                        </svg>
-                                                        Transférer
-                                                    </span>
+                                                    Transférer
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedProduitPerte(produit);
+                                                        setIsPerteModalOpen(true);
+                                                    }}
+                                                    className="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-full transition-colors duration-200"
+                                                >
+                                                    🗑️ Perte
                                                 </button>
                                             </td>
                                         </tr>
@@ -355,10 +393,67 @@ export default function ProduitsDepot() {
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-green-800">{totalValeurProduits.toFixed(2)} DA</td>
+                                        <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
                                     </tr>
                                 </tbody>
                             </table>
+                            
+                            {/* Perte Modal - Moved outside of tbody */}
+                            {isPerteModalOpen && selectedProduitPerte && (
+                                <PerteModal
+                                    produit={{
+                                        produit_id: selectedProduitPerte?.id || 0,
+                                        quantite: selectedProduitPerte?.quantite || 0,
+                                        unite: selectedProduitPerte?.unite || '',
+                                        marque: selectedProduitPerte?.marque,
+                                        dosage: selectedProduitPerte?.dosage,
+                                        destination: '',
+                                        nom_personnel: '',
+                                        image_url: selectedProduitPerte?.image_url,
+                                        // Champs manquants ajoutés :
+                                        type_transfert: 'interne',
+                                        date_transfert: '',
+                                        created_at: '',
+                                        updated_at: '',
+                                        type_produit: selectedProduitPerte?.type || '',
+                                    }}
+                                    onClose={() => setIsPerteModalOpen(false)}
+                                    onConfirm={(quantity: number, description: string) => {
+                                        if (!selectedProduitPerte) {
+                                            console.error('ProduitsDepot - selectedProduitPerte is null');
+                                            return;
+                                        }
+                                        
+                                        console.log('ProduitsDepot - onConfirm called with:', {
+                                            produit_id: selectedProduitPerte.id,
+                                            quantite: quantity,
+                                            description: description
+                                        });
+                                        
+                                        if (quantity <= 0 || quantity > selectedProduitPerte.quantite) {
+                                            alert('Quantité invalide');
+                                            return;
+                                        }
+                                        
+                                        console.log('ProduitsDepot - Sending POST request to /produits/perdre');
+                                        router.post('/produits/perdre', {
+                                            produit_id: String(selectedProduitPerte.id), // Convert to string explicitly
+                                            quantite: quantity,
+                                            description: description
+                                        }, {
+                                            onSuccess: () => {
+                                                console.log('ProduitsDepot - POST request successful');
+                                                setIsPerteModalOpen(false);
+                                            },
+                                            onError: (errors) => {
+                                                console.error('ProduitsDepot - POST request failed:', errors);
+                                            }
+                                        });
+                                    }}
+                                />
+                            )}
                         </div>
                     )}
                 </div>

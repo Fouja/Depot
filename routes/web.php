@@ -52,7 +52,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bons-de-receptions', [BonDeReceptionController::class, 'store'])->name('bons.store');
     
     // PDF generation
-    Route::get('/generate-pdf/{numero}', [PDFController::class, 'generatePDF'])->name('generate-pdf');
+    Route::get('/generate-pdf/{bonId}', [PDFController::class, 'generatePDF'])->name('generate-pdf');
         
     // Statistics
     Route::get('/statistics', [StatisticController::class, 'index'])->name('statistics');
@@ -68,6 +68,9 @@ Route::middleware(['auth'])->group(function () {
 // 
 // Route::post('/produits/transferer', [ProduitTransfereController::class, 'store'])->name('produits.transferer');
 // Route::get('/produits-transferes', [ProduitTransfereController::class, 'index'])->name('produits.transferes');
+Route::post('/produits/perdre', [ProduitPerduController::class, 'perdre'])
+    ->name('produits.perdre')
+    ->middleware(['auth', 'verified']);
 
 
 

@@ -1,8 +1,10 @@
 import React from 'react';
 import { router, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import axios from 'axios';
 
 export default function BonsDeReceptions({ bons = [] }: { bons: Array<{
+    prix_total: any;
     id: number;
     numero: string;
     date: string;
@@ -19,6 +21,8 @@ export default function BonsDeReceptions({ bons = [] }: { bons: Array<{
         quantite: number;
         unite: string;
         type: string;
+        prix_unitaire: number; // Ajoute cette ligne
+        prix_total?: number;   // Optionnel, si tu veux l'utiliser aussi
     }>;
 }> }) {
     return (
@@ -64,17 +68,26 @@ export default function BonsDeReceptions({ bons = [] }: { bons: Array<{
                                         </div>
                                     )}
                                     <div className="flex items-center">
-                                        <span className="mr-2">📤 Envoyeur:</span>
+                                        <span className="mr-2">📤 Fournisseur:</span>
                                         {bon.envoyeur}
                                     </div>
                                     <div className="border-t pt-2 mt-2">
                                         <h4 className="font-medium mb-1">Produits:</h4>
                                         {bon.produits.map((p, index) => (
-                                            <div key={index} className="text-sm flex justify-between">
-                                                <span>{p.nom} ({p.type})</span>
-                                                <span>{p.quantite} {p.unite}</span>
+                                            <div key={index} className="text-sm flex flex-col mb-2">
+                                                <div className="flex justify-between">
+                                                    <span>{p.nom} ({p.type})</span>
+                                                    <span>{p.quantite} {p.unite}</span>
+                                                </div>
+                                                <div className="flex justify-between text-xs text-gray-500">
+                                                    <span>Prix unitaire: {p.prix_unitaire} DA</span>
+                                                    <span>Prix total: {(p.prix_unitaire * p.quantite).toFixed(2)} DA</span>
+                                                </div>
                                             </div>
                                         ))}
+                                    </div>
+                                    <div className="mt-2 text-right font-bold text-blue-700">
+                                        Prix total du bon : {Number(bon.prix_total).toFixed(2)} DA
                                     </div>
                                 </div>
                                 {bon.description && (
@@ -84,7 +97,7 @@ export default function BonsDeReceptions({ bons = [] }: { bons: Array<{
                                 )}
                                 
                                 <button
-                                    onClick={() => router.get(`/generate-pdf/${bon.numero}`)}
+                                    onClick={() => window.open(`/generate-pdf/${bon.id}`, '_blank')}
                                     className="mt-4 w-full bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors"
                                 >
                                     Télécharger PDF

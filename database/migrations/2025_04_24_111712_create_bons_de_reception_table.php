@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('marque')->nullable();
             $table->string('image_path')->nullable();
             $table->text('description')->nullable();
+            $table->decimal('prix_total', 14, 2)->default(0);
             $table->timestamps();
         });
     }

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('produits_perdus', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('produit_id')->constrained()->onDelete('cascade');
+            $table->foreignId('produit_id')->constrained(); // Must match produits.id type
             $table->integer('quantity');
             $table->text('description');
             $table->dateTime('date_perte');

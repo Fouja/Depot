@@ -9,6 +9,9 @@ class ProduitPerdu extends Model
 {
     use HasFactory;
 
+    // Add table name declaration
+    protected $table = 'produits_perdus';
+
     protected $fillable = [
         'produit_id',
         'quantity',
@@ -20,5 +23,9 @@ class ProduitPerdu extends Model
     public function produit()
     {
         return $this->belongsTo(Produit::class);
+    }
+
+    public function user() {
+        return $this->belongsTo(User::class);
     }
 }
