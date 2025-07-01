@@ -16,11 +16,14 @@ class Statistic extends Model
         'unite',
         'destination',
         'personnel',
+        'envoyeur', // <-- ajoute cette ligne
         'type_transfert',
         'reference_id',
         'reference_type',
         'transaction_date',
-        'additional_data'
+        'prix_unitaire',
+        'prix_total',
+        'additional_data',
     ];
 
     protected $casts = [

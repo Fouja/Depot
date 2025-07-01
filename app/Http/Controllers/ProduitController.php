@@ -14,17 +14,27 @@ class ProduitController extends Controller
         // Group products by name only and sum their quantities
         // Using MIN() instead of ANY_VALUE() for MariaDB compatibility
         $produits = Produit::select(
+            DB::raw('MIN(id) as id'),
             'nom', 
-            DB::raw('SUM(quantite) as quantite'), 
-            DB::raw('MIN(unite) as unite'), 
-            DB::raw('MIN(type) as type'),
-            DB::raw('MIN(marque) as marque'),
-            DB::raw('MIN(dosage) as dosage'),
-            DB::raw('MIN(image_url) as image_url')
+            'type',
+            'unite',
+            'marque',
+            'dosage',
+            'image_url',
+            'prix_unitaire',
+            DB::raw('SUM(quantite) as quantite')
         )
-        ->groupBy('nom')
+        ->groupBy('nom', 'type', 'unite', 'marque', 'dosage', 'image_url', 'prix_unitaire')
         ->get();
             
         return inertia('ProduitsDepot', ['produits' => $produits]);
+    }
+
+    public function create()
+    {
+        $produits = Produit::distinct()->orderBy('nom')->pluck('nom');
+        return Inertia::render('BonsDeReceptions/Create', [
+            'produits' => $produits,
+        ]);
     }
 }

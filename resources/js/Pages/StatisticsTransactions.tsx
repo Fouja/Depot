@@ -4,6 +4,8 @@ import { Head } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
 
 interface StatisticData {
+    prix_total: number;
+    prix_unitaire: number;
     id: number;
     transaction_type: string;
     product_name: string;
@@ -171,6 +173,9 @@ export default function StatisticsTransactions({ statistics, summaryData, filter
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Date
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Type
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -180,20 +185,27 @@ export default function StatisticsTransactions({ statistics, summaryData, filter
                                                 Quantité
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Prix unitaire
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Prix total
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Destination/Personnel
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Date
+                                                PDF
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {statistics.data.map((stat) => (
                                             <tr key={stat.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                        getTransactionTypeColor(stat.transaction_type)
-                                                    }`}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {new Date(stat.transaction_date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </td>
+                                                <td className={`px-6 py-4 whitespace-nowrap`}>
+                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTransactionTypeColor(stat.transaction_type)}`}>
                                                         {getTransactionTypeLabel(stat.transaction_type)}
                                                     </span>
                                                 </td>
@@ -204,10 +216,21 @@ export default function StatisticsTransactions({ statistics, summaryData, filter
                                                     {stat.quantity} {stat.unite}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {stat.prix_unitaire ? Number(stat.prix_unitaire).toFixed(2) + ' DA' : '-'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {stat.prix_total ? Number(stat.prix_total).toFixed(2) + ' DA' : '-'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {stat.destination || stat.personnel || '-'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {new Date(stat.transaction_date).toLocaleDateString('fr-FR')}
+                                                    <button
+                                                        className="bg-blue-500 text-white px-2 py-1 rounded"
+                                                        onClick={() => window.open(`/statistics/pdf/${stat.id}`, '_blank')}
+                                                    >
+                                                        Télécharger PDF
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}

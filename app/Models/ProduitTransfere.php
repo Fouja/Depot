@@ -23,7 +23,9 @@ class ProduitTransfere extends Model
         'type_produit',
         'marque',
         'dosage',
-        'image_url'
+        'image_url',
+        'prix_unitaire',
+        'prix_total',
     ];
 
     protected $casts = [

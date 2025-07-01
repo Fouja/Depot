@@ -35,7 +35,7 @@ export default function StatisticsHome() {
                                     className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-green-200"
                                 >
                                     <div className="text-green-600 text-4xl mb-4">👥</div>
-                                    <h3 className="text-xl font-semibold text-green-800 mb-2">Statistiques par Envoyeur</h3>
+                                    <h3 className="text-xl font-semibold text-green-800 mb-2">Statistiques par Fournisseur</h3>
                                     <p className="text-green-600">Analysez les données par envoyeur pour identifier les sources principales.</p>
                                 </div>
                                 

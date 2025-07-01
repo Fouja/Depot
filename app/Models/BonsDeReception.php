@@ -15,14 +15,9 @@ class BonsDeReception extends Model
         'date',
         'envoyeur',
         'type',
-        'unite',
-        'quantite',
-
-        'peremption',
-        'marque',
         'image_path',
-        'description',
         'prix_total',
+        'description',
     ];
 
     protected $casts = [
@@ -35,12 +30,5 @@ class BonsDeReception extends Model
         return $this->hasMany(Produit::class, 'bon_id');
     }
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) {
-            $model->numero = 'BR-' . now()->timestamp . '-' . Str::random(4);
-        });
-    }
+    
 }

@@ -31,7 +31,7 @@
 <body>
     <div class="header">
         <div class="logo-container">
-            <img src="file:///C:/Users/asus/Desktop/lotfi/depo/public/images/garden.png" style="height:80px;">
+            <img src="{{ public_path('images/garden.png') }}" style="height:80px;">
         </div>
         <div class="header-text">
             <h1>Bon de Réception #{{ $bon->numero }}</h1>
@@ -59,14 +59,18 @@
         <tbody>
             @foreach($bon->produits as $produit)
             <tr>
-                <td>{{ $produit->nom }}</td>
-                <td>{{ $produit->quantite }}</td>
-                <td>{{ $produit->type }}</td>
-                <td>{{ $produit->marque }}</td>
-                <td>{{ $produit->dosage }}</td>
-                <td>{{ $produit->peremption }}</td>
-                <td>{{ number_format($produit->prix_unitaire, 2, ',', ' ') }} DA</td>
-                <td>{{ number_format($produit->prix_total, 2, ',', ' ') }} DA</td>
+                <td>{{ $produit->nom ?? '/' }}</td>
+                <td>{{ $produit->quantite ?? '/' }}</td>
+                <td>{{ $produit->type ?? '/' }}</td>
+                <td>{{ $produit->marque ?? '/' }}</td>
+                <td>{{ $produit->dosage ?? '/' }}</td>
+                <td>{{ $produit->peremption ?? '/' }}</td>
+                <td>
+                    {{ $produit->prix_unitaire !== null ? number_format($produit->prix_unitaire, 2, ',', ' ') . ' DA' : '/' }}
+                </td>
+                <td>
+                    {{ $produit->prix_total !== null ? number_format($produit->prix_total, 2, ',', ' ') . ' DA' : '/' }}
+                </td>
             </tr>
             @endforeach
         </tbody>

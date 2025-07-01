@@ -33,6 +33,7 @@ interface GraphsProps {
     depotData: {
         labels: string[];
         quantities: number[];
+        prix_totals: number[];
     };
     transferData: {
         labels: string[];
@@ -45,6 +46,10 @@ interface GraphsProps {
             data: number[];
         }[];
     };
+    comparatifData: {
+        labels: string[];
+        datasets: any[];
+    };
     filters: {
         start_date?: string;
         end_date?: string;
@@ -52,7 +57,15 @@ interface GraphsProps {
     };
 }
 
-export default function StatisticsGraphs({ depotData, transferData, timeSeriesData, filters }: GraphsProps) {
+function getDefaultLabels(months = 6) {
+    return Array.from({ length: months }, (_, i) => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - (months - 1 - i));
+        return d.toLocaleString('default', { month: 'short', year: '2-digit' });
+    });
+}
+
+export default function StatisticsGraphs({ depotData, transferData, timeSeriesData, comparatifData, filters }: GraphsProps) {
     const [localFilters, setLocalFilters] = useState(filters);
     const [activeTab, setActiveTab] = useState('depot');
 
@@ -62,27 +75,41 @@ export default function StatisticsGraphs({ depotData, transferData, timeSeriesDa
         router.get('/statistics/graphs', newFilters, { preserveState: true });
     };
 
+    // Valeurs par défaut si vide
+    const defaultLabels = getDefaultLabels(6);
+    const defaultData = [0, 0, 0, 0, 0, 0];
+
     // Chart data for depot products
     const depotChartData = {
-        labels: depotData.labels,
+        labels: depotData?.labels?.length ? depotData.labels : defaultLabels,
         datasets: [
             {
                 label: 'Quantité en stock',
-                data: depotData.quantities,
+                data: depotData?.quantities?.length ? depotData.quantities : defaultData,
                 backgroundColor: 'rgba(75, 192, 192, 0.6)',
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1,
+                stack: 'quantite',
+            },
+            {
+                label: 'Prix total (DA)',
+                data: depotData?.prix_totals?.length ? depotData.prix_totals : defaultData,
+                backgroundColor: 'rgba(255, 206, 86, 0.6)',
+                borderColor: 'rgba(255, 206, 86, 1)',
+                borderWidth: 1,
+                stack: 'prix',
+                yAxisID: 'y1',
             },
         ],
     };
 
     // Chart data for transferred products
     const transferChartData = {
-        labels: transferData.labels,
+        labels: transferData?.labels?.length ? transferData.labels : defaultLabels,
         datasets: [
             {
                 label: 'Quantité transférée',
-                data: transferData.quantities,
+                data: transferData?.quantities?.length ? transferData.quantities : defaultData,
                 backgroundColor: 'rgba(153, 102, 255, 0.6)',
                 borderColor: 'rgba(153, 102, 255, 1)',
                 borderWidth: 1,
@@ -92,8 +119,11 @@ export default function StatisticsGraphs({ depotData, transferData, timeSeriesDa
 
     // Chart data for time series
     const timeSeriesChartData = {
-        labels: timeSeriesData.labels,
-        datasets: timeSeriesData.datasets.map((dataset, index) => ({
+        labels: timeSeriesData?.labels?.length ? timeSeriesData.labels : defaultLabels,
+        datasets: (timeSeriesData?.datasets?.length ? timeSeriesData.datasets : [{
+            label: 'Quantité totale',
+            data: defaultData,
+        }]).map((dataset, index) => ({
             label: dataset.label,
             data: dataset.data,
             backgroundColor: [
@@ -110,6 +140,12 @@ export default function StatisticsGraphs({ depotData, transferData, timeSeriesDa
             ][index % 4],
             borderWidth: 1,
         })),
+    };
+
+    // Chart data for comparatif
+    const comparatifChartData = {
+        labels: comparatifData?.labels || [],
+        datasets: comparatifData?.datasets || [],
     };
 
     return (
@@ -205,13 +241,77 @@ export default function StatisticsGraphs({ depotData, transferData, timeSeriesDa
                                     >
                                         Séries temporelles
                                     </button>
+                                    <button
+                                        onClick={() => setActiveTab('comparatif')}
+                                        className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                                            activeTab === 'comparatif' 
+                                                ? 'border-blue-500 text-blue-600' 
+                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        Comparatif
+                                    </button>
                                 </nav>
-                                
+                            </div>
+
+                            {/* Graphs */}
+                            <div className="mb-8">
+                                {activeTab === 'depot' && (
+                                    <Bar
+                                        data={depotChartData}
+                                        options={{
+                                            responsive: true,
+                                            plugins: { legend: { position: 'top' } },
+                                            scales: {
+                                                x: { stacked: false },
+                                                y: { beginAtZero: true, title: { display: true, text: 'Quantité' } },
+                                                y1: {
+                                                    beginAtZero: true,
+                                                    position: 'right',
+                                                    title: { display: true, text: 'Prix total (DA)' },
+                                                    grid: { drawOnChartArea: false },
+                                                },
+                                            },
+                                        }}
+                                    />
+                                )}
+                                {activeTab === 'transfer' && (
+                                    <Bar
+                                        data={transferChartData}
+                                        options={{ responsive: true, plugins: { legend: { position: 'top' } } }}
+                                    />
+                                )}
+                                {activeTab === 'timeSeries' && (
+                                    <Line
+                                        data={timeSeriesChartData}
+                                        options={{ responsive: true, plugins: { legend: { position: 'top' } } }}
+                                    />
+                                )}
+                                {activeTab === 'comparatif' && (
+                                    <Bar
+                                        data={comparatifChartData}
+                                        options={{
+                                            responsive: true,
+                                            plugins: { legend: { position: 'top' } },
+                                            scales: {
+                                                x: { stacked: true },
+                                                y: { beginAtZero: true, title: { display: true, text: 'Quantité' }, stacked: true },
+                                                y1: {
+                                                    beginAtZero: true,
+                                                    position: 'right',
+                                                    title: { display: true, text: 'Prix total (DA)' },
+                                                    grid: { drawOnChartArea: false },
+                                                    stacked: false,
+                                                },
+                                            },
+                                        }}
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </AuthenticatedLayout>
-);
+    );
 }

@@ -5,24 +5,45 @@ namespace App\Http\Controllers;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Envoyeur;
+use App\Models\BonsDeReception; // <-- AJOUTE CETTE LIGNE
 
 class BonDeReceptionController extends Controller
 {
     public function index()
     {
+        // Pour la liste
+        $bons = BonsDeReception::with('produits')->orderByDesc('date')->get();
         return Inertia::render('BonsDeReceptions', [
-            'bons' => \App\Models\BonsDeReception::with('produits')->latest()->get()
+            'bons' => $bons,
         ]);
     }
 
     public function create()
     {
-        return Inertia::render('BonsDeReceptions');
+        $envoyeurs = \App\Models\Envoyeur::orderBy('nom')->pluck('nom')->toArray();
+        $produits = \App\Models\Produit::orderBy('nom')->distinct()->pluck('nom')->toArray();
+
+        // Génère le prochain numéro de bon
+        $lastBon = \App\Models\BonsDeReception::orderByDesc('id')->first();
+        $nextNumber = $lastBon ? $lastBon->id + 1 : 1;
+        $numero = 'BR-' . str_pad($nextNumber, 7, '0', STR_PAD_LEFT);
+
+        return Inertia::render('BonsDeReceptions/Create', [
+            'envoyeurs' => $envoyeurs,
+            'produits' => $produits,
+            'numero' => $numero, // Passe le numéro généré
+        ]);
     }
 
    
     public function store(Request $request)
     {
+        // Enregistre l'envoyeur AVANT la validation
+        if ($request->filled('envoyeur')) {
+            Envoyeur::firstOrCreate(['nom' => $request->envoyeur]);
+        }
+
         $validated = $request->validate([
             'numero' => 'required|unique:bons_de_receptions',
             'date' => 'required|date',
@@ -33,11 +54,11 @@ class BonDeReceptionController extends Controller
             'produits.*.quantite' => 'required|numeric',
             'produits.*.type' => 'required|in:outillages,consommables,autres',
             'produits.*.peremption' => 'nullable|date',
-            'produits.*.marque' => 'required|string',
+            'produits.*.marque' => 'nullable|string',
             'produits.*.dosage' => 'nullable|string',
             'produits.*.description' => 'nullable|string',
             'produits.*.unite' => 'required|in:pièce,kg,litre,mètre',
-            'produits.*.prix_unitaire' => 'required|numeric|min:0', // Ajouté
+            'produits.*.prix_unitaire' => 'required|numeric|min:0',
         ]);
 
         $imagePath = $request->file('image') ? $request->file('image')->store('bon-images', 'public') : null;
@@ -54,7 +75,7 @@ class BonDeReceptionController extends Controller
             'envoyeur' => $validated['envoyeur'],
             'type' => $validated['produits'][0]['type'],
             'image_path' => $imagePath,
-            'prix_total' => $prixTotal, // Ajouté
+            'prix_total' => $prixTotal,
         ]);
 
         foreach ($validated['produits'] as $produitData) {
@@ -68,11 +89,28 @@ class BonDeReceptionController extends Controller
                 'marque' => $produitData['marque'],
                 'dosage' => $produitData['dosage'],
                 'description' => $produitData['description'],
-                'prix_unitaire' => $produitData['prix_unitaire'], // Ajouté
-                'prix_total' => $produitData['quantite'] * $produitData['prix_unitaire'], // Ajouté
+                'prix_unitaire' => $produitData['prix_unitaire'],
+                'prix_total' => $produitData['quantite'] * $produitData['prix_unitaire'],
+            ]);
+
+            \App\Models\Statistic::create([
+                'transaction_type' => 'bon_reception',
+                'product_name' => $produitData['nom'],
+                'quantity' => $produitData['quantite'],
+                'unite' => $produitData['unite'],
+                'destination' => null,
+                'personnel' => null,
+                'type_transfert' => null,
+                'reference_id' => $bon->id,
+                'reference_type' => \App\Models\BonsDeReception::class,
+                'transaction_date' => now(),
+                'prix_unitaire' => $produitData['prix_unitaire'],
+                'prix_total' => $produitData['quantite'] * $produitData['prix_unitaire'],
+                'additional_data' => null,
             ]);
         }
 
-        return redirect()->route('generate-pdf', ['bon_id' => $bon->id]);
+        // Redirige vers la liste des bons
+        return redirect()->route('bons-de-receptions.index')->with('success', 'Bon créé avec succès');
     }
 }

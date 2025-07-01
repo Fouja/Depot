@@ -16,14 +16,17 @@ class ProduitPerduController extends Controller
     public function index()
     {
         // Transform the data to match the frontend field names
-        $produitsPerdus = ProduitPerdu::with('user')->get()->map(function ($perdu) {
+        $produitsPerdus = ProduitPerdu::with('user', 'produit')->get()->map(function ($perdu) {
             return [
                 'id' => $perdu->id,
                 'produit_id' => $perdu->produit_id,
+                'produit_nom' => $perdu->produit ? $perdu->produit->nom : '', // Add product name
                 'quantite' => $perdu->quantity, // Map quantity to quantite
                 'motif' => $perdu->description, // Map description to motif
                 'created_at' => $perdu->created_at,
-                'user' => $perdu->user ? ['name' => $perdu->user->name] : null
+                'user' => $perdu->user ? ['name' => $perdu->user->name] : null,
+                'prix_unitaire' => $perdu->produit ? $perdu->produit->prix_unitaire : null,
+                'prix_total' => $perdu->produit ? ($perdu->produit->prix_unitaire * $perdu->quantity) : null,
             ];
         });
 

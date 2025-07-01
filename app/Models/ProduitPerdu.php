@@ -17,7 +17,9 @@ class ProduitPerdu extends Model
         'quantity',
         'description',
         'date_perte',
-        'user_id'
+        'user_id',
+        'prix_unitaire',
+        'prix_total',
     ];
 
     public function produit()

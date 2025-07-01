@@ -11,6 +11,10 @@ use App\Http\Controllers\BonDeReceptionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\ProduitController;
+use App\Http\Controllers\DestinationController;
+use App\Http\Controllers\StatisticPDFController;
+use App\Http\Controllers\StatisticController;
+use App\Http\Controllers\ProduitPerduController;
 
 // Existing routes
 Route::get('/op', function () {
@@ -40,15 +44,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/produits/recuperer', [ProduitTransfereController::class, 'recuperer'])->name('produits.recuperer');
     
     // Lost products
-    Route::get('/produits-perdus', function () {
-        return Inertia::render('ProduitsPerdus');
-    });
+    Route::get('/produits-perdus', [ProduitPerduController::class, 'index'])->middleware(['auth']);
     
     // Reception forms
-    Route::get('/bons-de-receptions', [BonDeReceptionController::class, 'index'])->name('bons.index');
-    Route::get('/bons-de-receptions/create', function () {
-        return Inertia::render('BonsDeReceptions/Create');
-    })->name('bons.create');
+    Route::get('/bons-de-receptions', [BonDeReceptionController::class, 'index'])->name('bons-de-receptions.index');
+    Route::get('/bons-de-receptions/create', [BonDeReceptionController::class, 'create'])->name('bons-de-receptions.create');
     Route::post('/bons-de-receptions', [BonDeReceptionController::class, 'store'])->name('bons.store');
     
     // PDF generation
@@ -59,6 +59,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/statistics/graphs', [StatisticController::class, 'graphs'])->name('statistics.graphs');
     Route::get('/statistics/transactions', [StatisticController::class, 'transactions'])->name('statistics.transactions');
     Route::get('/statistics/envoyeurs', [StatisticController::class, 'envoyeurs'])->name('statistics.envoyeurs');
+    Route::get('/statistics/pdf/{id}', [StatisticPDFController::class, 'show'])->name('statistics.pdf');
+    Route::get('/statistics/envoyeurs/{envoyeur}', [StatisticController::class, 'envoyeurDetail'])->name('statistics.envoyeurs.detail');
+
+    Route::post('/produits/perdre', [ProduitPerduController::class, 'perdre'])->name('produits.perdre');
 });
 
 // Remove these duplicate routes that were outside the auth middleware
@@ -68,9 +72,8 @@ Route::middleware(['auth'])->group(function () {
 // 
 // Route::post('/produits/transferer', [ProduitTransfereController::class, 'store'])->name('produits.transferer');
 // Route::get('/produits-transferes', [ProduitTransfereController::class, 'index'])->name('produits.transferes');
-Route::post('/produits/perdre', [ProduitPerduController::class, 'perdre'])
-    ->name('produits.perdre')
-    ->middleware(['auth', 'verified']);
+Route::post('/destinations', [DestinationController::class, 'store'])->name('destinations.store');
+Route::get('/destinations', [DestinationController::class, 'index'])->name('destinations.index');
 
 
 

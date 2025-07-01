@@ -11,6 +11,9 @@ interface ProduitPerdu {
   user?: {
     name: string;
   };
+  produit_nom: string;
+  prix_unitaire?: number | null;
+  prix_total?: number | null;
 }
 
 const ProduitsPerdus = ({ produitsPerdus = [] }: { produitsPerdus: ProduitPerdu[] }) => {
@@ -20,7 +23,7 @@ const ProduitsPerdus = ({ produitsPerdus = [] }: { produitsPerdus: ProduitPerdu[
 
   const filteredPerdus = useMemo(() => {
     return produitsPerdus.filter(p =>
-      p.produit_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.produit_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.motif.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (p.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -36,6 +39,10 @@ const ProduitsPerdus = ({ produitsPerdus = [] }: { produitsPerdus: ProduitPerdu[
         : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [filteredPerdus, sortField, sortDirection]);
+
+  const totalPrixPerdu = useMemo(() => {
+    return sortedPerdus.reduce((sum, p) => sum + (Number(p.prix_total) || 0), 0);
+  }, [sortedPerdus]);
 
   const getSortIcon = (field: string) => {
     return sortField === field ? (sortDirection === 'asc' ? '↑' : '↓') : '↕';
@@ -90,9 +97,9 @@ const ProduitsPerdus = ({ produitsPerdus = [] }: { produitsPerdus: ProduitPerdu[
                 </th>
                 <th
                   className="px-6 py-3 cursor-pointer"
-                  onClick={() => handleSort('produit_id')}
+                  onClick={() => handleSort('produit_nom')}
                 >
-                  Produit {getSortIcon('produit_id')}
+                  Produit {getSortIcon('produit_nom')}
                 </th>
                 <th
                   className="px-6 py-3 cursor-pointer"
@@ -101,6 +108,8 @@ const ProduitsPerdus = ({ produitsPerdus = [] }: { produitsPerdus: ProduitPerdu[
                   Quantité {getSortIcon('quantite')}
                 </th>
                 <th className="px-6 py-3">Motif</th>
+                <th className="px-6 py-3">Prix unitaire</th>
+                <th className="px-6 py-3">Prix total</th>
                 <th className="px-6 py-3">Responsable</th>
               </tr>
             </thead>
@@ -110,14 +119,28 @@ const ProduitsPerdus = ({ produitsPerdus = [] }: { produitsPerdus: ProduitPerdu[
                   <td className="px-6 py-4">
                     {new Date(perdu.created_at).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="px-6 py-4 font-medium">{perdu.produit_id}</td>
+                  <td className="px-6 py-4 font-medium">{perdu.produit_nom}</td>
                   <td className="px-6 py-4">{perdu.quantite}</td>
                   <td className="px-6 py-4">{perdu.motif}</td>
+                  <td className="px-6 py-4">
+                    {perdu.prix_unitaire !== null && perdu.prix_unitaire !== undefined && !isNaN(Number(perdu.prix_unitaire))
+                      ? Number(perdu.prix_unitaire).toFixed(2) + ' DA'
+                      : '-'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {perdu.prix_total !== null && perdu.prix_total !== undefined && !isNaN(Number(perdu.prix_total))
+                      ? Number(perdu.prix_total).toFixed(2) + ' DA'
+                      : '-'}
+                  </td>
                   <td className="px-6 py-4">{perdu.user?.name || 'Inconnu'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="bg-red-100 p-4 rounded-lg font-bold text-right mt-2">
+          Total prix produits perdus : {totalPrixPerdu.toFixed(2)} DA
         </div>
       </div>
     </AuthenticatedLayout>

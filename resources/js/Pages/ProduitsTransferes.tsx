@@ -19,6 +19,8 @@ interface Transfert {
     marque?: string;
     dosage?: string;
     image_url?: string;
+    prix_unitaire?: number | null;
+    prix_total?: number | null;
 }
 
 export default function ProduitsTransferes() {
@@ -35,10 +37,20 @@ export default function ProduitsTransferes() {
     const [isPerteModalOpen, setIsPerteModalOpen] = useState(false);
     const [selectedTransfertPerte, setSelectedTransfertPerte] = useState<Transfert | null>(null);
     
+    // Ajoute ces states :
+    const [isRecupererModalOpen, setIsRecupererModalOpen] = useState(false);
+    const [selectedTransfertRecuperer, setSelectedTransfertRecuperer] = useState<Transfert | null>(null);
+    
     // Add the modal opening handler function INSIDE the component
     const openPerteModal = (transfert: Transfert) => {
         setSelectedTransfertPerte(transfert);
         setIsPerteModalOpen(true);
+    };
+    
+    // Fonction pour ouvrir le modal
+    const openRecupererModal = (transfert: Transfert) => {
+        setSelectedTransfertRecuperer(transfert);
+        setIsRecupererModalOpen(true);
     };
     
     // Simulate loading effect
@@ -108,6 +120,11 @@ export default function ProduitsTransferes() {
         if (!Array.isArray(transferts)) return 0;
         return transferts.reduce((sum, transfert) => sum + transfert.quantite, 0);
     }, [transferts]);
+    
+    // Calculate total prix transférés
+    const totalPrixTransfere = useMemo(() => {
+        return sortedTransferts.reduce((sum, t) => sum + (Number(t.prix_total) || 0), 0);
+    }, [sortedTransferts]);
     
     // Handle sort
     const handleSort = (field: string) => {
@@ -313,6 +330,20 @@ export default function ProduitsTransferes() {
                                         <th 
                                             scope="col" 
                                             className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors duration-200"
+                                            onClick={() => handleSort('prix_unitaire')}
+                                        >
+                                            Prix unitaire
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors duration-200"
+                                            onClick={() => handleSort('prix_total')}
+                                        >
+                                            Prix total
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors duration-200"
                                             onClick={() => handleSort('type_transfert')}
                                         >
                                             Type Transfert {getSortIcon('type_transfert')}
@@ -374,6 +405,16 @@ export default function ProduitsTransferes() {
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                                                     {transfert.dosage || '-'}
                                                 </td>
+                                                <td className="px-6 py-4">
+                                                    {transfert.prix_unitaire !== null && transfert.prix_unitaire !== undefined && !isNaN(Number(transfert.prix_unitaire))
+                                                        ? Number(transfert.prix_unitaire).toFixed(2) + ' DA'
+                                                        : '-'}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {transfert.prix_total !== null && transfert.prix_total !== undefined && !isNaN(Number(transfert.prix_total))
+                                                        ? Number(transfert.prix_total).toFixed(2) + ' DA'
+                                                        : '-'}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                         transfert.type_transfert === 'interne' 
@@ -391,7 +432,7 @@ export default function ProduitsTransferes() {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button
-                                                        onClick={() => handleReturnToDepot(transfert.id)}
+                                                        onClick={() => openRecupererModal(transfert)}
                                                         className="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded-full transition-colors duration-200 mr-2"
                                                     >
                                                         Récupérer
@@ -487,6 +528,63 @@ export default function ProduitsTransferes() {
                             )}
                         </div>
                     )}
+                </div>
+                
+                {/* Recuperer Modal - New modal for recuperer action */}
+                {isRecupererModalOpen && selectedTransfertRecuperer && (
+                    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+                            <h2 className="text-lg font-bold mb-4">Récupérer une quantité</h2>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium mb-1">
+                                    Quantité à récupérer (max {selectedTransfertRecuperer.quantite})
+                                </label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={selectedTransfertRecuperer.quantite}
+                                    defaultValue={selectedTransfertRecuperer.quantite}
+                                    className="border rounded px-3 py-2 w-full"
+                                    id="recuperer-quantite"
+                                />
+                            </div>
+                            <div className="flex justify-end space-x-2">
+                                <button
+                                    onClick={() => setIsRecupererModalOpen(false)}
+                                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const input = document.getElementById('recuperer-quantite') as HTMLInputElement;
+                                        const quantite = Number(input.value);
+                                        if (quantite < 1 || quantite > selectedTransfertRecuperer.quantite) {
+                                            alert("Quantité invalide !");
+                                            return;
+                                        }
+                                        router.post('/produits/recuperer', {
+                                            transfert_id: selectedTransfertRecuperer.id,
+                                            quantite: quantite
+                                        }, {
+                                            onSuccess: () => {
+                                                setIsRecupererModalOpen(false);
+                                                router.reload();
+                                            }
+                                        });
+                                    }}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                    Valider
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Total prix produits transférés */}
+                <div className="bg-blue-100 p-4 rounded-lg font-bold text-right mt-2">
+                    Total prix produits transférés : {totalPrixTransfere.toFixed(2)} DA
                 </div>
             </div>
         </AuthenticatedLayout>

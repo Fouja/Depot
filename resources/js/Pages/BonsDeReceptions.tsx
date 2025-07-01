@@ -50,7 +50,9 @@ export default function BonsDeReceptions({ bons = [] }: { bons: Array<{
                         <div key={bon.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow">
                             <div className="p-6">
                                 <div className="flex justify-between items-start mb-4">
-                                    <h3 className="text-xl font-semibold text-blue-800">Bon #{bon.numero}</h3>
+                                    <h3 className="text-xl font-semibold text-blue-800">
+                                        Bon #{bon.numero.startsWith('BR-') ? bon.numero : `BR-${bon.numero}`}
+                                    </h3>
                                     <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm capitalize">
                                         {bon.type}
                                     </span>

@@ -15,6 +15,15 @@ interface Produit {
     prix_total?: number;    // Ajouté
 }
 
+const BASE_DESTINATIONS = [
+    "Pépiniaire agrumes",
+    "Les Vergets",
+    "Service techniques",
+    "Showroom",
+    "Service Sécurité",
+    "Parc familliale"
+];
+
 export default function ProduitsDepot() {
     const { produits } = usePage().props;
     const [searchTerm, setSearchTerm] = useState('');
@@ -31,12 +40,29 @@ export default function ProduitsDepot() {
     const [customName, setCustomName] = useState('');
     const [isPerteModalOpen, setIsPerteModalOpen] = useState(false);
     const [selectedProduitPerte, setSelectedProduitPerte] = useState<Produit | null>(null);
+    const [newDestination, setNewDestination] = useState('');
+    const [destinations, setDestinations] = useState(BASE_DESTINATIONS);
+    const [personnelName, setPersonnelName] = useState('');
+    const [showAddDestination, setShowAddDestination] = useState(false);
+    const [newDestinationName, setNewDestinationName] = useState('');
+    const [destinationType, setDestinationType] = useState('interne');
     // Simulate loading effect
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsLoading(false);
         }, 800);
         return () => clearTimeout(timer);
+    }, []);
+    
+    // Récupère les destinations depuis le backend au chargement :
+    useEffect(() => {
+        fetch('/destinations?type=interne')
+            .then(res => res.json())
+            .then(data => {
+                // Merge sans doublons
+                const merged = Array.from(new Set([...BASE_DESTINATIONS, ...data, "Autre"]));
+                setDestinations(merged);
+            });
     }, []);
     
     // Filter products based on search term
@@ -50,7 +76,7 @@ export default function ProduitsDepot() {
             (produit.dosage && produit.dosage.toLowerCase().includes(searchTerm.toLowerCase()))
         );
     }, [produits, searchTerm]);
-    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     // Sort products
     const sortedProduits = useMemo(() => {
         if (!filteredProduits.length) return [];
@@ -73,16 +99,15 @@ export default function ProduitsDepot() {
         });
     }, [filteredProduits, sortField, sortDirection]);
     
-    // Calculate total quantity from all products (not just filtered)
+    // Calcul des totaux
     const totalQuantity = useMemo(() => {
         if (!Array.isArray(produits)) return 0;
-        return produits.reduce((sum, produit) => sum + produit.quantite, 0);
+        return produits.reduce((sum, produit) => sum + Number(produit.quantite), 0);
     }, [produits]);
     
-    // Calculate total value of all products (not just filtered)
     const totalValeurProduits = useMemo(() => {
         if (!Array.isArray(produits)) return 0;
-        return produits.reduce((sum, produit) => sum + (produit.prix_total || 0), 0);
+        return produits.reduce((sum, produit) => sum + ((produit.prix_unitaire || 0) * produit.quantite), 0);
     }, [produits]);
     
     // Handle sort
@@ -128,35 +153,55 @@ export default function ProduitsDepot() {
     // Handle transfer submission
     const handleTransfer = () => {
         if (!selectedProduit) return;
-        
-        // Validate transfer quantity
+
         if (transferQuantity <= 0 || transferQuantity > selectedProduit.quantite) {
             alert('Quantité invalide');
             return;
         }
-        
-        // Validate destination
         if (!transferDestination) {
             alert('Veuillez sélectionner une destination');
             return;
         }
-        
-        // Prepare data for transfer
+        if (!personnelName.trim()) {
+            alert('Veuillez saisir le nom du personnel');
+            return;
+        }
+
         const transferData = {
-            produit_id: selectedProduit.nom, // Using name as identifier
+            produit_id: selectedProduit.nom,
             quantite: transferQuantity,
-            destination: transferDestination,
+            destination: transferDestination === 'Autre' ? newDestination : transferDestination,
             type_transfert: transferType,
-            nom_personnel: transferDestination === 'Maison Personnels' ? customName : null
+            nom_personnel: personnelName
         };
-        
-        // Send transfer data to server
+
         router.post('/produits/transferer', transferData, {
             onSuccess: () => {
                 setIsTransferModalOpen(false);
-                // Optionally refresh the page to update quantities
-                // router.reload();
+            },
+            onError: (errors) => {
+                alert('Erreur lors du transfert : ' + JSON.stringify(errors));
             }
+        });
+    };
+    
+    // Fonction pour ajouter une destination :
+    const handleAddDestination = () => {
+        if (!newDestinationName.trim()) return;
+        fetch('/destinations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken // csrfToken est toujours une string
+            },
+            body: JSON.stringify({ nom: newDestinationName, type: destinationType })
+        })
+        .then(res => res.json())
+        .then(dest => {
+            setDestinations([...destinations, dest.nom]);
+            setTransferDestination(dest.nom);
+            setShowAddDestination(false);
+            setNewDestinationName('');
         });
     };
     
@@ -166,7 +211,7 @@ export default function ProduitsDepot() {
                 <div className="flex flex-col md:flex-row justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-green-800 mb-4 md:mb-0">
                         <span className="inline-block mr-2">🌱</span> 
-                        Produits en Pépinière
+                        Produits au Depot
                     </h1>
                     
                     {/* Search filter */}
@@ -237,7 +282,10 @@ export default function ProduitsDepot() {
                     <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
                         <div className="flex items-center">
                             <div className="p-3 rounded-full bg-yellow-100 mr-4">
-                                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z"></path></svg>
+                                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="2" y="7" width="20" height="10" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                </svg>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500 font-medium">Valeur totale des produits présents</p>
@@ -344,10 +392,10 @@ export default function ProduitsDepot() {
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.dosage || '-'}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.unite}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                                                {produit.prix_unitaire !== undefined ? produit.prix_unitaire.toFixed(2) + ' DA' : '-'}
+                                                {produit.prix_unitaire !== undefined ? Number(produit.prix_unitaire).toFixed(2) + ' DA' : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                                                {produit.prix_total !== undefined ? produit.prix_total.toFixed(2) + ' DA' : '-'}
+                                                {(Number(produit.prix_unitaire || 0) * Number(produit.quantite)).toFixed(2)} DA
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                                                 {produit.image_url ? (
@@ -373,6 +421,7 @@ export default function ProduitsDepot() {
                                                 </button>
                                                 <button
                                                     onClick={() => {
+                                                        console.log('Perte button clicked, produit:', produit);
                                                         setSelectedProduitPerte(produit);
                                                         setIsPerteModalOpen(true);
                                                     }}
@@ -384,7 +433,7 @@ export default function ProduitsDepot() {
                                         </tr>
                                     ))}
                                     
-                                    {/* Total row */}
+                                    {/* Ligne Total */}
                                     <tr className="bg-green-100 font-bold">
                                         <td className="px-6 py-4 whitespace-nowrap text-green-800">TOTAL</td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
@@ -404,20 +453,20 @@ export default function ProduitsDepot() {
                             {isPerteModalOpen && selectedProduitPerte && (
                                 <PerteModal
                                     produit={{
-                                        produit_id: selectedProduitPerte?.id || 0,
-                                        quantite: selectedProduitPerte?.quantite || 0,
-                                        unite: selectedProduitPerte?.unite || '',
-                                        marque: selectedProduitPerte?.marque,
-                                        dosage: selectedProduitPerte?.dosage,
+                                        produit_id: selectedProduitPerte.id,
+                                        quantite: selectedProduitPerte.quantite,
+                                        unite: selectedProduitPerte.unite,
+                                        marque: selectedProduitPerte.marque,
+                                        dosage: selectedProduitPerte.dosage,
                                         destination: '',
                                         nom_personnel: '',
-                                        image_url: selectedProduitPerte?.image_url,
+                                        image_url: selectedProduitPerte.image_url,
                                         // Champs manquants ajoutés :
                                         type_transfert: 'interne',
                                         date_transfert: '',
                                         created_at: '',
                                         updated_at: '',
-                                        type_produit: selectedProduitPerte?.type || '',
+                                        type_produit: selectedProduitPerte.type || '',
                                     }}
                                     onClose={() => setIsPerteModalOpen(false)}
                                     onConfirm={(quantity: number, description: string) => {
@@ -425,21 +474,23 @@ export default function ProduitsDepot() {
                                             console.error('ProduitsDepot - selectedProduitPerte is null');
                                             return;
                                         }
-                                        
+                                        if (typeof selectedProduitPerte.id === 'undefined' || selectedProduitPerte.id === null) {
+                                            alert('Erreur: produit_id est manquant.');
+                                            console.error('ProduitsDepot - produit_id is missing:', selectedProduitPerte);
+                                            return;
+                                        }
                                         console.log('ProduitsDepot - onConfirm called with:', {
                                             produit_id: selectedProduitPerte.id,
                                             quantite: quantity,
                                             description: description
                                         });
-                                        
                                         if (quantity <= 0 || quantity > selectedProduitPerte.quantite) {
                                             alert('Quantité invalide');
                                             return;
                                         }
-                                        
                                         console.log('ProduitsDepot - Sending POST request to /produits/perdre');
                                         router.post('/produits/perdre', {
-                                            produit_id: String(selectedProduitPerte.id), // Convert to string explicitly
+                                            produit_id: selectedProduitPerte.id,
                                             quantite: quantity,
                                             description: description
                                         }, {
@@ -494,49 +545,69 @@ export default function ProduitsDepot() {
                                     </button>
                                 </div>
                                 
-                                {transferType === 'interne' && (
-                                    <select
-                                        value={transferDestination}
-                                        onChange={(e) => setTransferDestination(e.target.value)}
-                                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    >
-                                        <option value="">Sélectionner une destination</option>
-                                        <option value="Pépiniaire agrumes">Pépiniaire agrumes</option>
-                                        <option value="Les Vergets">Les Vergets</option>
-                                        <option value="Service techniques">Service techniques</option>
-                                        <option value="Showroom">Showroom</option>
-                                        <option value="Service Sécurité">Service Sécurité</option>
-                                        <option value="Parc familliale">Parc familliale</option>
-                                        <option value="Autre">Autre</option>
-                                    </select>
-                                )}
-                                
-                                {transferType === 'externe' && (
-                                    <div>
-                                        <select
-                                            value={transferDestination}
-                                            onChange={(e) => setTransferDestination(e.target.value)}
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-2"
-                                        >
-                                            <option value="">Sélectionner une destination</option>
-                                            <option value="Hamre el 3ine">Hamre el 3ine</option>
-                                            <option value="Zeralda">Zeralda</option>
-                                            <option value="ACI">ACI</option>
-                                            <option value="Maison Personnels">Maison Personnels</option>
-                                            <option value="Autre">Autre</option>
-                                        </select>
-                                        
-                                        {transferDestination === 'Maison Personnels' && (
-                                            <input
-                                                type="text"
-                                                placeholder="Nom du personnel"
-                                                value={customName}
-                                                onChange={(e) => setCustomName(e.target.value)}
+                                {(transferType === 'interne' || transferType === 'externe') && (
+                                    <>
+                                        <div className="flex items-center space-x-2 mt-2">
+                                            <select
+                                                value={transferDestination}
+                                                onChange={(e) => setTransferDestination(e.target.value)}
                                                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            />
+                                            >
+                                                <option value="">Sélectionner une destination</option>
+                                                {destinations.map(dest => (
+                                                    <option key={dest} value={dest}>{dest}</option>
+                                                ))}
+                                                <option value="Autre">Autre</option>
+                                            </select>
+                                            <button
+                                                type="button"
+                                                className="bg-blue-500 text-white px-3 py-1 rounded"
+                                                onClick={() => setShowAddDestination(true)}
+                                            >
+                                                Ajouter une destination
+                                            </button>
+                                        </div>
+                                        {showAddDestination && (
+                                            <div className="flex mt-2">
+                                                <input
+                                                    type="text"
+                                                    value={newDestinationName}
+                                                    onChange={e => setNewDestinationName(e.target.value)}
+                                                    className="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
+                                                    placeholder="Nouvelle destination"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                                    onClick={handleAddDestination}
+                                                >
+                                                    Ajouter
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="ml-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+                                                    onClick={() => setShowAddDestination(false)}
+                                                >
+                                                    Annuler
+                                                </button>
+                                            </div>
                                         )}
-                                    </div>
+                                    </>
                                 )}
+                            </div>
+                            
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">
+                                    Nom du personnel effectuant le transfert
+                                </label>
+                                <input
+                                    type="text"
+                                    value={personnelName}
+                                    onChange={e => setPersonnelName(e.target.value)}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    placeholder="Nom du personnel"
+                                    required
+                                />
                             </div>
                             
                             <div className="flex justify-end space-x-2">
@@ -571,3 +642,4 @@ export default function ProduitsDepot() {
         </AuthenticatedLayout>
     );
 }
+

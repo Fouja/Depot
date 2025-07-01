@@ -29,6 +29,13 @@ return new class extends Migration
             $table->index(['transaction_type', 'transaction_date']);
             $table->index('reference_id');
         });
+        Schema::table('statistics', function (Blueprint $table) {
+            $table->decimal('prix_unitaire', 12, 2)->nullable()->after('quantity');
+            $table->decimal('prix_total', 14, 2)->nullable()->after('prix_unitaire');
+        });
+        Schema::table('statistics', function (Blueprint $table) {
+            $table->string('envoyeur')->nullable()->after('personnel');
+        });
     }
 
     /**
@@ -36,6 +43,11 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('statistics', function (Blueprint $table) {
+            $table->dropColumn(['prix_unitaire', 'prix_total']);
+            $table->dropColumn('envoyeur');
+        });
         Schema::dropIfExists('statistics');
     }
 };
+

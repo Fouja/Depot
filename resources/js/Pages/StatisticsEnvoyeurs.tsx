@@ -5,9 +5,10 @@ import { router } from '@inertiajs/react';
 
 interface EnvoyeurStat {
     envoyeur: string;
-    total_bons: number;
-    total_products: number;
-    last_reception_date: string;
+    total_operations: number;
+    total_quantity: number;
+    total_prix: number;
+    last_operation_date: string;
 }
 
 interface EnvoyeurStatisticsProps {
@@ -95,13 +96,16 @@ export default function StatisticsEnvoyeurs({ envoyeurStats, filters }: Envoyeur
                                                 Fournisseur
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Nombre de Bons
+                                                Nombre d'Opérations
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Total Produits
+                                                Quantité Totale
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Dernière Réception
+                                                Prix Total (DA)
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Dernière Opération
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Actions
@@ -115,13 +119,16 @@ export default function StatisticsEnvoyeurs({ envoyeurStats, filters }: Envoyeur
                                                     {stat.envoyeur}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {stat.total_bons}
+                                                    {stat.total_operations}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {stat.total_products}
+                                                    {stat.total_quantity}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {new Date(stat.last_reception_date).toLocaleDateString('fr-FR')}
+                                                    {stat.total_prix ? Number(stat.total_prix).toLocaleString('fr-FR') : 0} DA
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {stat.last_operation_date ? new Date(stat.last_operation_date).toLocaleDateString('fr-FR') : '/'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <button 

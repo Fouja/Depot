@@ -15,6 +15,8 @@ return new class extends Migration
             $table->text('description');
             $table->dateTime('date_perte');
             $table->foreignId('user_id')->constrained();
+            $table->decimal('prix_unitaire', 12, 2)->nullable();
+            $table->decimal('prix_total', 12, 2)->nullable();
             $table->timestamps();
         });
     }

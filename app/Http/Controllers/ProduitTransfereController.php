@@ -12,7 +12,28 @@ class ProduitTransfereController extends Controller
 {
     public function index()
     {
-        $produitsTransferes = ProduitTransfere::orderBy('date_transfert', 'desc')->get();
+        $produitsTransferes = ProduitTransfere::with('produit')->orderBy('date_transfert', 'desc')->get()->map(function ($transfert) {
+            $prixUnitaire = $transfert->produit ? $transfert->produit->prix_unitaire : (\App\Models\Produit::where('nom', $transfert->produit_id)->value('prix_unitaire'));
+            $prixTotal = $prixUnitaire ? ($prixUnitaire * $transfert->quantite) : null;
+            return [
+                'id' => $transfert->id,
+                'produit_id' => $transfert->produit_id,
+                'quantite' => $transfert->quantite,
+                'destination' => $transfert->destination,
+                'type_transfert' => $transfert->type_transfert,
+                'nom_personnel' => $transfert->nom_personnel,
+                'date_transfert' => $transfert->date_transfert,
+                'created_at' => $transfert->created_at,
+                'updated_at' => $transfert->updated_at,
+                'type_produit' => $transfert->type_produit,
+                'unite' => $transfert->unite,
+                'marque' => $transfert->marque,
+                'dosage' => $transfert->dosage,
+                'image_url' => $transfert->image_url,
+                'prix_unitaire' => $prixUnitaire,
+                'prix_total' => $prixTotal,
+            ];
+        });
         
         return Inertia::render('ProduitsTransferes', [
             'produitsTransferes' => $produitsTransferes
@@ -43,7 +64,7 @@ class ProduitTransfereController extends Controller
         }
         
         // Create the transfer record
-        ProduitTransfere::create([
+        $produitTransfere = ProduitTransfere::create([
             'produit_nom' => $validated['produit_nom'],
             'quantite' => $validated['quantite'],
             'unite' => $validated['unite'],
@@ -53,6 +74,23 @@ class ProduitTransfereController extends Controller
             'destination' => $validated['destination'],
             'type_transfert' => $validated['type_transfert'],
             'date_transfert' => now(),
+        ]);
+        
+        // Log the transaction in the statistics table
+        \App\Models\Statistic::create([
+            'transaction_type' => 'transfer',
+            'product_name' => $validated['produit_nom'],
+            'quantity' => $validated['quantite'],
+            'unite' => $validated['unite'],
+            'destination' => $validated['destination'],
+            'personnel' => $validated['nom_personnel'],
+            'type_transfert' => $validated['type_transfert'],
+            'reference_id' => $produitTransfere->id,
+            'reference_type' => ProduitTransfere::class,
+            'transaction_date' => now(),
+            'prix_unitaire' => $produit->prix_unitaire,
+            'prix_total' => $produit->prix_unitaire * $validated['quantite'],
+            'additional_data' => null,
         ]);
         
         // Update the product quantity
@@ -83,30 +121,29 @@ class ProduitTransfereController extends Controller
     // Return a transferred product back to depot
     public function recuperer(Request $request)
     {
-        // Validate request
         $validated = $request->validate([
             'transfert_id' => 'required|integer|exists:produits_transferes,id',
+            'quantite' => 'required|integer|min:1',
         ]);
-        
-        // Start a database transaction
+
         DB::beginTransaction();
-        
+
         try {
-            // Find the transfer record
             $transfert = ProduitTransfere::findOrFail($validated['transfert_id']);
-            
-            // Find or create the product in depot
+
+            if ($validated['quantite'] > $transfert->quantite) {
+                return back()->withErrors(['quantite' => 'Quantité à récupérer supérieure à la quantité transférée']);
+            }
+
+            // Ajoute la quantité au dépôt
             $produit = Produit::where('nom', $transfert->produit_id)->first();
-            
             if ($produit) {
-                // If product exists, increase its quantity
-                $produit->quantite += $transfert->quantite;
+                $produit->quantite += $validated['quantite'];
                 $produit->save();
             } else {
-                // If product doesn't exist anymore, create a new one with the transferred data
                 Produit::create([
                     'nom' => $transfert->produit_id,
-                    'quantite' => $transfert->quantite,
+                    'quantite' => $validated['quantite'],
                     'unite' => $transfert->unite,
                     'type' => $transfert->type_produit,
                     'marque' => $transfert->marque,
@@ -114,13 +151,25 @@ class ProduitTransfereController extends Controller
                     'image_url' => $transfert->image_url
                 ]);
             }
-            
-            // Delete the transfer record
-            $transfert->delete();
-            
+
+            // Mets à jour ou supprime le transfert
+            if ($validated['quantite'] == $transfert->quantite) {
+                $transfert->delete();
+            } else {
+                $transfert->quantite -= $validated['quantite'];
+                $transfert->save();
+            }
+
+            // Record recuperation in statistics
+            \App\Services\StatisticService::recordRecuperation(
+                $transfert->produit_id,
+                $validated['quantite'],
+                $transfert->unite,
+                $transfert->nom_personnel,
+                $transfert->id
+            );
+
             DB::commit();
-            
-            // Redirect to ProduitsDepot page instead of back to the transfers page
             return redirect()->route('produits.depot')->with('success', 'Produit récupéré avec succès');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -137,7 +186,7 @@ class ProduitTransfereController extends Controller
             'quantite' => 'required|integer|min:1',
             'destination' => 'required|string',
             'type_transfert' => 'required|in:interne,externe',
-            'nom_personnel' => 'nullable|string',
+            'nom_personnel' => 'required|string', // Rendu obligatoire
         ]);
         
         // Start a database transaction
@@ -156,7 +205,7 @@ class ProduitTransfereController extends Controller
             $produit->save();
             
             // Create a transfer record with all product information
-            ProduitTransfere::create([
+            $produitTransfere = ProduitTransfere::create([
                 'produit_id' => $validated['produit_id'],
                 'quantite' => $validated['quantite'],
                 'destination' => $validated['destination'],
@@ -169,6 +218,23 @@ class ProduitTransfereController extends Controller
                 'marque' => $produit->marque,
                 'dosage' => $produit->dosage,
                 'image_url' => $produit->image_url
+            ]);
+            
+            // Log the transaction in the statistics table
+            \App\Models\Statistic::create([
+                'transaction_type' => 'transfer',
+                'product_name' => $produit->nom,
+                'quantity' => $validated['quantite'],
+                'unite' => $produit->unite,
+                'destination' => $validated['destination'],
+                'personnel' => $validated['nom_personnel'],
+                'type_transfert' => $validated['type_transfert'],
+                'reference_id' => $produitTransfere->id,
+                'reference_type' => ProduitTransfere::class,
+                'transaction_date' => now(),
+                'prix_unitaire' => $produit->prix_unitaire,
+                'prix_total' => $produit->prix_unitaire * $validated['quantite'],
+                'additional_data' => null,
             ]);
             
             DB::commit();

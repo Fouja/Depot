@@ -14,7 +14,7 @@ interface ProductForm {
     prix_unitaire: string; // Ajouté
 }
 
-const CreateBonDeReception = () => {
+const CreateBonDeReception = ({ envoyeurs = [], produits = [], numero = '' }: { envoyeurs?: string[], produits?: string[], numero?: string }) => {
     const [products, setProducts] = React.useState<ProductForm[]>([{
         nom: '',
         quantite: '',
@@ -28,7 +28,7 @@ const CreateBonDeReception = () => {
     }]);
 
     const [formData, setFormData] = React.useState({
-        numero: `BR-${Date.now()}`,
+        numero: numero, // <-- utilise la prop backend
         date: new Date().toISOString().split('T')[0],
         envoyeur: '',
         image: null as File | null
@@ -95,7 +95,7 @@ const CreateBonDeReception = () => {
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
         setFormData({
-            numero: `BR-${Date.now()}`,
+            numero: numero, // <-- toujours la prop backend
             date: new Date().toISOString().split('T')[0],
             envoyeur: '',
             image: null
@@ -150,12 +150,18 @@ const CreateBonDeReception = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Fournisseur</label>
                             <input
+                                list="envoyeur-list"
                                 type="text"
                                 value={formData.envoyeur}
                                 onChange={e => setFormData({...formData, envoyeur: e.target.value})}
                                 className="mt-1 block w-full border-gray-300 rounded-md"
                                 required
                             />
+                            <datalist id="envoyeur-list">
+                                {envoyeurs.map((nom) => (
+                                    <option key={nom} value={nom} />
+                                ))}
+                            </datalist>
                         </div>
 
                         <div>
@@ -182,12 +188,18 @@ const CreateBonDeReception = () => {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Nom</label>
                                         <input
+                                            list="produit-list"
                                             type="text"
                                             value={product.nom}
                                             onChange={(e) => handleProductChange(index, 'nom', e.target.value)}
                                             className="mt-1 block w-full border-gray-300 rounded-md"
                                             required
                                         />
+                                        <datalist id="produit-list">
+                                            {produits.map((nom) => (
+                                                <option key={nom} value={nom} />
+                                            ))}
+                                        </datalist>
                                     </div>
 
                                     <div>
