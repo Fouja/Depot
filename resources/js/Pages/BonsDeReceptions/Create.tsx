@@ -319,10 +319,17 @@ const CreateBonDeReception = ({ envoyeurs = [], produits = [], numero = '' }: { 
                         Prix total du bon : {totalBon.toFixed(2)} DA
                     </div>
 
-                    <div className="mt-6">
+                    <div className="flex justify-between mt-6">
+                        <button
+                            type="button"
+                            className="bg-gray-300 text-gray-800 px-6 py-3 rounded-md hover:bg-gray-400"
+                            onClick={() => router.visit('/')}
+                        >
+                            Annuler
+                        </button>
                         <button
                             type="submit"
-                            className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 w-full"
+                            className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700"
                         >
                             Enregistrer le bon de réception
                         </button>

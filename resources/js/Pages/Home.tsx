@@ -101,6 +101,25 @@ export default function Home() {
                                 </button>
                             </div>
                         </div>
+                        {/* Bon de Commande */}
+                        <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+                            <div className="h-40 flex items-center justify-center">
+                                <img 
+                                    src="/images/receipt.png" 
+                                    alt="Bon de Commande" 
+                                    className="max-w-full max-h-full object-contain p-2"
+                                />
+                            </div>
+                            <div className="p-4">
+                                <h3 className="text-lg font-medium mb-2 text-yellow-700">Bons de Commande</h3>
+                                <button
+                                    onClick={() => router.get('/bons-de-commandes')}
+                                    className="w-full p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md transition-colors"
+                                >
+                                    Accéder
+                                </button>
+                            </div>
+                        </div>
                         
                         <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
                             <div className="h-40 flex items-center justify-center">

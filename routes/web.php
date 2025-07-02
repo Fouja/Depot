@@ -50,7 +50,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/bons-de-receptions', [BonDeReceptionController::class, 'index'])->name('bons-de-receptions.index');
     Route::get('/bons-de-receptions/create', [BonDeReceptionController::class, 'create'])->name('bons-de-receptions.create');
     Route::post('/bons-de-receptions', [BonDeReceptionController::class, 'store'])->name('bons.store');
-    
+
+    // Bon de Commande
+    Route::get('/bons-de-commandes', [\App\Http\Controllers\BonDeCommandeController::class, 'index'])->name('bons-de-commandes.index');
+    Route::get('/bons-de-commandes/create', [\App\Http\Controllers\BonDeCommandeController::class, 'create'])->name('bons-de-commandes.create');
+    Route::post('/bons-de-commandes', [\App\Http\Controllers\BonDeCommandeController::class, 'store'])->name('bons-de-commandes.store');
+    Route::get('/bons-de-commandes/{id}/pdf', [\App\Http\Controllers\PDFBonDeCommandeController::class, 'generatePDF'])->name('bons-de-commandes.pdf');
+
     // PDF generation
     Route::get('/generate-pdf/{bonId}', [PDFController::class, 'generatePDF'])->name('generate-pdf');
         
