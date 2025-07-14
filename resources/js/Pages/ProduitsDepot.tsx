@@ -1,0 +1,649 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { usePage, router } from '@inertiajs/react';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PerteModal from '@/Components/PerteModal';
+interface Produit {
+    id: number;
+    nom: string;
+    quantite: number;
+    unite: string;
+    type: string;
+    marque?: string;
+    dosage?: string;
+    image_url?: string;
+    prix_unitaire?: number; // Ajouté
+    prix_total?: number;    // Ajouté
+}
+
+const BASE_DESTINATIONS = [
+    "Pépiniaire agrumes",
+    "Les Vergets",
+    "Service techniques",
+    "Showroom",
+    "Service Sécurité",
+    "Parc familliale"
+];
+
+export default function ProduitsDepot() {
+    const { produits } = usePage().props;
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortField, setSortField] = useState('nom');
+    const [sortDirection, setSortDirection] = useState('asc');
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // Transfer modal states
+    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+    const [selectedProduit, setSelectedProduit] = useState<Produit | null>(null);
+    const [transferQuantity, setTransferQuantity] = useState(1);
+    const [transferDestination, setTransferDestination] = useState('');
+    const [transferType, setTransferType] = useState('interne');
+    const [customName, setCustomName] = useState('');
+    const [isPerteModalOpen, setIsPerteModalOpen] = useState(false);
+    const [selectedProduitPerte, setSelectedProduitPerte] = useState<Produit | null>(null);
+    const [newDestination, setNewDestination] = useState('');
+    const [destinations, setDestinations] = useState(BASE_DESTINATIONS);
+    const [personnelName, setPersonnelName] = useState('');
+    const [showAddDestination, setShowAddDestination] = useState(false);
+    const [newDestinationName, setNewDestinationName] = useState('');
+    const [destinationType, setDestinationType] = useState('interne');
+    // Simulate loading effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 800);
+        return () => clearTimeout(timer);
+    }, []);
+    
+    // Récupère les destinations depuis le backend au chargement :
+    useEffect(() => {
+        fetch('/destinations?type=interne')
+            .then(res => res.json())
+            .then(data => {
+                // Merge sans doublons
+                const merged = Array.from(new Set([...BASE_DESTINATIONS, ...data, "Autre"]));
+                setDestinations(merged);
+            });
+    }, []);
+    
+    // Filter products based on search term
+    const filteredProduits = useMemo(() => {
+        if (!Array.isArray(produits)) return [];
+        
+        return produits.filter((produit) => 
+            produit.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            produit.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (produit.marque && produit.marque.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (produit.dosage && produit.dosage.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [produits, searchTerm]);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    // Sort products
+    const sortedProduits = useMemo(() => {
+        if (!filteredProduits.length) return [];
+        
+        return [...filteredProduits].sort((a, b) => {
+            if (sortField === 'quantite') {
+                return sortDirection === 'asc' 
+                    ? a.quantite - b.quantite 
+                    : b.quantite - a.quantite;
+            }
+            
+            const valueA = a[sortField as keyof Produit]?.toString().toLowerCase() || '';
+            const valueB = b[sortField as keyof Produit]?.toString().toLowerCase() || '';
+            
+            if (sortDirection === 'asc') {
+                return valueA.localeCompare(valueB);
+            } else {
+                return valueB.localeCompare(valueA);
+            }
+        });
+    }, [filteredProduits, sortField, sortDirection]);
+    
+    // Calcul des totaux
+    const totalQuantity = useMemo(() => {
+        if (!Array.isArray(produits)) return 0;
+        return produits.reduce((sum, produit) => sum + Number(produit.quantite), 0);
+    }, [produits]);
+    
+    const totalValeurProduits = useMemo(() => {
+        if (!Array.isArray(produits)) return 0;
+        return produits.reduce((sum, produit) => sum + ((produit.prix_unitaire || 0) * produit.quantite), 0);
+    }, [produits]);
+    
+    // Handle sort
+    const handleSort = (field: string) => {
+        if (sortField === field) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+    
+    // Get sort icon
+    const getSortIcon = (field: string) => {
+        if (sortField !== field) return '↕️';
+        return sortDirection === 'asc' ? '↑' : '↓';
+    };
+    
+    // Get row background based on product type
+    const getRowBackground = (type: string) => {
+        switch(type.toLowerCase()) {
+            case 'médicament':
+                return 'bg-blue-50 hover:bg-blue-100';
+            case 'matériel':
+                return 'bg-green-50 hover:bg-green-100';
+            case 'consommable':
+                return 'bg-yellow-50 hover:bg-yellow-100';
+            default:
+                return 'hover:bg-gray-50';
+        }
+    };
+
+    // Open transfer modal
+    const openTransferModal = (produit: Produit) => {
+        setSelectedProduit(produit);
+        setTransferQuantity(1);
+        setTransferDestination('');
+        setTransferType('interne');
+        setCustomName('');
+        setIsTransferModalOpen(true);
+    };
+    
+    // Handle transfer submission
+    const handleTransfer = () => {
+        if (!selectedProduit) return;
+
+        if (transferQuantity <= 0 || transferQuantity > selectedProduit.quantite) {
+            alert('Quantité invalide');
+            return;
+        }
+        if (!transferDestination) {
+            alert('Veuillez sélectionner une destination');
+            return;
+        }
+        if (!personnelName.trim()) {
+            alert('Veuillez saisir le nom du personnel');
+            return;
+        }
+
+        const transferData = {
+            produit_id: selectedProduit.nom,
+            quantite: transferQuantity,
+            destination: transferDestination === 'Autre' ? newDestination : transferDestination,
+            type_transfert: transferType,
+            nom_personnel: personnelName
+        };
+
+        router.post('/produits/transferer', transferData, {
+            onSuccess: () => {
+                setIsTransferModalOpen(false);
+            },
+            onError: (errors) => {
+                alert('Erreur lors du transfert : ' + JSON.stringify(errors));
+            }
+        });
+    };
+    
+    // Fonction pour ajouter une destination :
+    const handleAddDestination = () => {
+        if (!newDestinationName.trim()) return;
+        fetch('/destinations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken // csrfToken est toujours une string
+            },
+            body: JSON.stringify({ nom: newDestinationName, type: destinationType })
+        })
+        .then(res => res.json())
+        .then(dest => {
+            setDestinations([...destinations, dest.nom]);
+            setTransferDestination(dest.nom);
+            setShowAddDestination(false);
+            setNewDestinationName('');
+        });
+    };
+    
+    return (
+        <AuthenticatedLayout>
+            <div className="p-6 max-w-7xl mx-auto">
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-green-800 mb-4 md:mb-0">
+                        <span className="inline-block mr-2">🌱</span> 
+                        Produits au Depot
+                    </h1>
+                    
+                    {/* Search filter */}
+                    <div className="w-full md:w-1/3">
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                className="bg-white border border-green-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full pl-10 p-2.5 transition-all duration-300"
+                                placeholder="Rechercher par nom, type, marque..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Stats cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
+                        <div className="flex items-center">
+                            <div className="p-3 rounded-full bg-green-100 mr-4">
+                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium">Nombre de produits</p>
+                                <p className="text-xl font-bold text-gray-800">{filteredProduits.length}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
+                        <div className="flex items-center">
+                            <div className="p-3 rounded-full bg-blue-100 mr-4">
+                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium">Quantité totale</p>
+                                <p className="text-xl font-bold text-gray-800">{totalQuantity}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-purple-500">
+                        <div className="flex items-center">
+                            <div className="p-3 rounded-full bg-purple-100 mr-4">
+                                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium">Types de produits</p>
+                                <p className="text-xl font-bold text-gray-800">
+                                    {new Set(filteredProduits.map(p => p.type)).size}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+                        <div className="flex items-center">
+                            <div className="p-3 rounded-full bg-yellow-100 mr-4">
+                                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="2" y="7" width="20" height="10" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" fill="none"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium">Valeur totale des produits présents</p>
+                                <p className="text-xl font-bold text-gray-800">{totalValeurProduits.toFixed(2)} DA</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Products table */}
+                <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 transition-all duration-300">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center p-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-green-50">
+                                    <tr>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
+                                            onClick={() => handleSort('nom')}
+                                        >
+                                            Nom {getSortIcon('nom')}
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
+                                            onClick={() => handleSort('type')}
+                                        >
+                                            Type {getSortIcon('type')}
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
+                                            onClick={() => handleSort('quantite')}
+                                        >
+                                            Quantité Totale {getSortIcon('quantite')}
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
+                                            onClick={() => handleSort('marque')}
+                                        >
+                                            Marque {getSortIcon('marque')}
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
+                                            onClick={() => handleSort('dosage')}
+                                        >
+                                            Dosage {getSortIcon('dosage')}
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
+                                            onClick={() => handleSort('unite')}
+                                        >
+                                            Unité {getSortIcon('unite')}
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
+                                            Prix unitaire
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider">
+                                            Prix total
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider"
+                                        >
+                                            Image
+                                        </th>
+                                        <th 
+                                            scope="col" 
+                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider"
+                                        >
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {sortedProduits.map((produit: Produit, index) => (
+                                        <tr key={index} className={`${getRowBackground(produit.type)} transition-colors duration-200`}>
+                                            <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{produit.nom}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap capitalize text-gray-700">
+                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    {produit.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <div className="h-2 w-20 bg-gray-200 rounded-full mr-2">
+                                                        <div 
+                                                            className="h-2 bg-green-500 rounded-full" 
+                                                            style={{ width: `${Math.min(100, (produit.quantite / (totalQuantity * 0.2)) * 100)}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="font-bold text-gray-900">{produit.quantite}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.marque || '-'}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                {produit.dosage
+                                                    ? produit.dosage.toString().replace('.', ',')
+                                                    : '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.unite}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                {produit.prix_unitaire !== undefined ? Number(produit.prix_unitaire).toFixed(2) + ' DA' : '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                {(Number(produit.prix_unitaire || 0) * Number(produit.quantite)).toFixed(2)} DA
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                {produit.image_url ? (
+                                                    <img 
+                                                        src={produit.image_url} 
+                                                        alt={produit.nom}
+                                                        className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                                                    />
+                                                ) : (
+                                                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                        <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button
+                                                    onClick={() => openTransferModal(produit)}
+                                                    className="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-full transition-colors duration-200 mr-2"
+                                                >
+                                                    Transférer
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        console.log('Perte button clicked, produit:', produit);
+                                                        setSelectedProduitPerte(produit);
+                                                        setIsPerteModalOpen(true);
+                                                    }}
+                                                    className="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-full transition-colors duration-200"
+                                                >
+                                                    🗑️ Perte
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    
+                                    {/* Ligne Total */}
+                                    <tr className="bg-green-100 font-bold">
+                                        <td className="px-6 py-4 whitespace-nowrap text-green-800">TOTAL</td>
+                                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-green-800">{totalQuantity}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-green-800">{totalValeurProduits.toFixed(2)} DA</td>
+                                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                                        <td className="px-6 py-4 whitespace-nowrap"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            {/* Perte Modal - Moved outside of tbody */}
+                            {isPerteModalOpen && selectedProduitPerte && (
+                                <PerteModal
+                                    produit={{
+                                        produit_id: selectedProduitPerte.id,
+                                        quantite: selectedProduitPerte.quantite,
+                                        unite: selectedProduitPerte.unite,
+                                        marque: selectedProduitPerte.marque,
+                                        dosage: selectedProduitPerte.dosage,
+                                        destination: '',
+                                        nom_personnel: '',
+                                        image_url: selectedProduitPerte.image_url,
+                                        // Champs manquants ajoutés :
+                                        type_transfert: 'interne',
+                                        date_transfert: '',
+                                        created_at: '',
+                                        updated_at: '',
+                                        type_produit: selectedProduitPerte.type || '',
+                                    }}
+                                    onClose={() => setIsPerteModalOpen(false)}
+                                    onConfirm={(quantity: number, description: string) => {
+                                        if (!selectedProduitPerte) {
+                                            console.error('ProduitsDepot - selectedProduitPerte is null');
+                                            return;
+                                        }
+                                        if (typeof selectedProduitPerte.id === 'undefined' || selectedProduitPerte.id === null) {
+                                            alert('Erreur: produit_id est manquant.');
+                                            console.error('ProduitsDepot - produit_id is missing:', selectedProduitPerte);
+                                            return;
+                                        }
+                                        console.log('ProduitsDepot - onConfirm called with:', {
+                                            produit_id: selectedProduitPerte.id,
+                                            quantite: quantity,
+                                            description: description
+                                        });
+                                        if (quantity <= 0 || quantity > selectedProduitPerte.quantite) {
+                                            alert('Quantité invalide');
+                                            return;
+                                        }
+                                        console.log('ProduitsDepot - Sending POST request to /produits/perdre');
+                                        router.post('/produits/perdre', {
+                                            produit_id: selectedProduitPerte.id,
+                                            quantite: quantity,
+                                            description: description
+                                        }, {
+                                            onSuccess: () => {
+                                                console.log('ProduitsDepot - POST request successful');
+                                                setIsPerteModalOpen(false);
+                                            },
+                                            onError: (errors) => {
+                                                console.error('ProduitsDepot - POST request failed:', errors);
+                                            }
+                                        });
+                                    }}
+                                />
+                            )}
+                        </div>
+                    )}
+                </div>
+                
+                {/* Transfer Modal */}
+                {isTransferModalOpen && selectedProduit && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                            <h2 className="text-xl font-bold mb-4">Transférer {selectedProduit.nom}</h2>
+                            
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">
+                                    Quantité disponible: {selectedProduit.quantite} {selectedProduit.unite}
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={selectedProduit.quantite}
+                                    value={transferQuantity}
+                                    onChange={(e) => setTransferQuantity(parseInt(e.target.value) || 0)}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                />
+                            </div>
+                            
+                            <div className="mb-4">
+                                <div className="flex space-x-4 mb-2">
+                                    <button
+                                        className={`px-4 py-2 rounded ${transferType === 'interne' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                                        onClick={() => setTransferType('interne')}
+                                    >
+                                        Transfert Interne
+                                    </button>
+                                    <button
+                                        className={`px-4 py-2 rounded ${transferType === 'externe' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                                        onClick={() => setTransferType('externe')}
+                                    >
+                                        Transfert Externe
+                                    </button>
+                                </div>
+                                
+                                {(transferType === 'interne' || transferType === 'externe') && (
+                                    <>
+                                        <div className="flex items-center space-x-2 mt-2">
+                                            <select
+                                                value={transferDestination}
+                                                onChange={(e) => setTransferDestination(e.target.value)}
+                                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            >
+                                                <option value="">Sélectionner une destination</option>
+                                                {destinations.map(dest => (
+                                                    <option key={dest} value={dest}>{dest}</option>
+                                                ))}
+                                                <option value="Autre">Autre</option>
+                                            </select>
+                                            <button
+                                                type="button"
+                                                className="bg-blue-500 text-white px-3 py-1 rounded"
+                                                onClick={() => setShowAddDestination(true)}
+                                            >
+                                                Ajouter une destination
+                                            </button>
+                                        </div>
+                                        {showAddDestination && (
+                                            <div className="flex mt-2">
+                                                <input
+                                                    type="text"
+                                                    value={newDestinationName}
+                                                    onChange={e => setNewDestinationName(e.target.value)}
+                                                    className="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
+                                                    placeholder="Nouvelle destination"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                                    onClick={handleAddDestination}
+                                                >
+                                                    Ajouter
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="ml-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+                                                    onClick={() => setShowAddDestination(false)}
+                                                >
+                                                    Annuler
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                            
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">
+                                    Nom du personnel effectuant le transfert
+                                </label>
+                                <input
+                                    type="text"
+                                    value={personnelName}
+                                    onChange={e => setPersonnelName(e.target.value)}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    placeholder="Nom du personnel"
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2">
+                                <button
+                                    onClick={() => setIsTransferModalOpen(false)}
+                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={handleTransfer}
+                                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                >
+                                    Transférer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Empty state */}
+                {!isLoading && sortedProduits.length === 0 && (
+                    <div className="text-center py-12">
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun produit trouvé</h3>
+                        <p className="mt-1 text-sm text-gray-500">Essayez de modifier votre recherche ou d'ajouter de nouveaux produits.</p>
+                    </div>
+                )}
+            </div>
+        </AuthenticatedLayout>
+    );
+}
+
