@@ -123,7 +123,7 @@ class ProduitTransfereController extends Controller
     {
         $validated = $request->validate([
             'transfert_id' => 'required|integer|exists:produits_transferes,id',
-            'quantite' => 'required|integer|min:1',
+            'quantite' => 'required|numeric|min:0.01', // ✅ numeric
         ]);
 
         DB::beginTransaction();
@@ -183,10 +183,10 @@ class ProduitTransfereController extends Controller
         // Validate request
         $validated = $request->validate([
             'produit_id' => 'required|string',
-            'quantite' => 'required|integer|min:1',
+            'quantite' => 'required|numeric|min:0.01', // ✅ numeric
             'destination' => 'required|string',
             'type_transfert' => 'required|in:interne,externe',
-            'nom_personnel' => 'required|string', // Rendu obligatoire
+            'nom_personnel' => 'required|string',
         ]);
         
         // Start a database transaction

@@ -525,10 +525,11 @@ export default function ProduitsDepot() {
                                 </label>
                                 <input
                                     type="number"
-                                    min="1"
+                                    min="0.01"
+                                    step="0.01"
                                     max={selectedProduit.quantite}
                                     value={transferQuantity}
-                                    onChange={(e) => setTransferQuantity(parseInt(e.target.value) || 0)}
+                                    onChange={(e) => setTransferQuantity(parseFloat(e.target.value) || 0)}
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                 />
                             </div>
