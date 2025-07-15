@@ -60,7 +60,9 @@
             @foreach($bon->produits as $produit)
             <tr>
                 <td>{{ $produit->nom ?? '/' }}</td>
-                <td>{{ $produit->quantite ?? '/' }}</td>
+                <td>
+                    {{ $produit->quantite !== null ? $produit->quantite . ' ' . strtoupper($produit->unite ?? '') : '/' }}
+                </td>
                 <td>{{ $produit->type ?? '/' }}</td>
                 <td>{{ $produit->marque ?? '/' }}</td>
                 <td>{{ $produit->dosage ?? '/' }}</td>

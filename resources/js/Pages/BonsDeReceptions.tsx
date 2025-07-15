@@ -11,7 +11,7 @@ export default function BonsDeReceptions({ bons = [] }: { bons: Array<{
     envoyeur: string;
     type: string;
     unite: string;
-    quantite: number;
+    quantite: string;
     peremption?: string;
     marque?: string;
     description?: string;
@@ -103,6 +103,22 @@ export default function BonsDeReceptions({ bons = [] }: { bons: Array<{
                                     className="mt-4 w-full bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors"
                                 >
                                     Télécharger PDF
+                                </button>
+                                <button
+                                    onClick={() => window.location.href = `/bons-de-receptions/${bon.id}/edit`}
+                                    className="mt-2 w-full bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg hover:bg-yellow-200 transition-colors"
+                                >
+                                    Modifier
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm("Êtes-vous sûr de vouloir supprimer ce bon ?")) {
+                                            router.delete(`/bons-de-receptions/${bon.id}`);
+                                        }
+                                    }}
+                                    className="mt-2 w-full bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors"
+                                >
+                                    Supprimer
                                 </button>
                             </div>
                         </div>

@@ -44,7 +44,7 @@ class ProduitTransfereController extends Controller
     {
         $validated = $request->validate([
             'produit_nom' => 'required|string',
-            'quantite' => 'required|integer|min:1',
+            'quantite' => 'required|numeric|min:0.01',
             'unite' => 'required|string',
             'type_produit' => 'required|string',
             'marque' => 'nullable|string',

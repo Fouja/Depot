@@ -60,10 +60,10 @@ export default function PerteModal({ produit, onClose, onConfirm, isTransfer = f
                         </label>
                         <input
                             type="number"
-                            min="1"
+                            min="0.01"
                             max={produit.quantite}
                             value={quantite}
-                            onChange={(e) => setQuantite(Math.max(1, parseInt(e.target.value)))}
+                            onChange={(e) => setQuantite(Math.max(0.01, parseFloat(e.target.value)))}
                             className="w-full p-2 border rounded"
                         />
                     </div>

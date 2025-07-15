@@ -47,7 +47,9 @@ export default function StatisticsTransactions({ statistics, summaryData, filter
             'product_added': 'Produit Ajouté',
             'transfer': 'Transfert',
             'recuperation': 'Récupération',
-            'bon_reception': 'Bon de Réception'
+            'bon_reception': 'Bon de Réception',
+            'bon_modification': 'Modification de Bon',
+            'bon_suppression': 'Suppression de Bon'
         };
         return labels[type] || type;
     };
@@ -57,7 +59,9 @@ export default function StatisticsTransactions({ statistics, summaryData, filter
             'product_added': 'bg-green-100 text-green-800',
             'transfer': 'bg-blue-100 text-blue-800',
             'recuperation': 'bg-yellow-100 text-yellow-800',
-            'bon_reception': 'bg-purple-100 text-purple-800'
+            'bon_reception': 'bg-purple-100 text-purple-800',
+            'bon_modification': 'bg-orange-100 text-orange-800',
+            'bon_suppression': 'bg-red-100 text-red-800'
         };
         return colors[type] || 'bg-gray-100 text-gray-800';
     };
@@ -96,6 +100,8 @@ export default function StatisticsTransactions({ statistics, summaryData, filter
                                         <option value="transfer">Transfert</option>
                                         <option value="recuperation">Récupération</option>
                                         <option value="bon_reception">Bon de Réception</option>
+                                        <option value="bon_modification">Modification de Bon</option>
+                                        <option value="bon_suppression">Suppression de Bon</option>
                                     </select>
                                 </div>
                                 

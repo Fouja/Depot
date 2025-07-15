@@ -39,7 +39,7 @@ class ProduitPerduController extends Controller
     {
         $request->validate([
             'produit_id' => 'required',  // Remove the exists validation
-            'quantite' => 'required|integer|min:1',
+            'quantite' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:255',
             'transfert_id' => 'nullable|exists:produits_transferes,id'
         ]);

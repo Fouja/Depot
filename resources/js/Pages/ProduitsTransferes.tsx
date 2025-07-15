@@ -6,7 +6,7 @@ import PerteModal from '@/Components/PerteModal';
 interface Transfert {
     id: number;
     produit_id: string;
-    quantite: number;
+    quantite: string;
     destination: string;
     type_transfert: 'interne' | 'externe';
     nom_personnel: string | null;
@@ -118,7 +118,7 @@ export default function ProduitsTransferes() {
     // Calculate total quantity from all transfers (not just filtered)
     const totalQuantity = useMemo(() => {
         if (!Array.isArray(transferts)) return 0;
-        return transferts.reduce((sum, transfert) => sum + transfert.quantite, 0);
+        return transferts.reduce((sum, transfert) => sum + parseFloat(transfert.quantite), 0);
     }, [transferts]);
     
     // Calculate total prix transférés
@@ -390,7 +390,7 @@ export default function ProduitsTransferes() {
                                                         <div className="h-2 w-20 bg-gray-200 rounded-full mr-2">
                                                             <div 
                                                                 className="h-2 bg-blue-500 rounded-full" 
-                                                                style={{ width: `${Math.min(100, (transfert.quantite / (totalQuantity * 0.2)) * 100)}%` }}
+                                                                style={{ width: `${Math.min(100, (parseFloat(transfert.quantite) / (totalQuantity * 0.2)) * 100)}%` }}
                                                             ></div>
                                                         </div>
                                                         <span className="font-bold text-gray-900">{transfert.quantite}</span>
@@ -448,7 +448,11 @@ export default function ProduitsTransferes() {
                                                 
                                                     {isPerteModalOpen && selectedTransfertPerte && (
                                                       <PerteModal
-                                                        produit={{...selectedTransfertPerte, produit_id: parseInt(selectedTransfertPerte?.produit_id || '0')}}
+                                                        produit={{
+                                                            ...selectedTransfertPerte,
+                                                            produit_id: Number(selectedTransfertPerte?.produit_id),
+                                                            quantite: parseFloat(selectedTransfertPerte.quantite)
+                                                        }}
                                                         isTransfer={true}
                                                         onClose={() => setIsPerteModalOpen(false)}
                                                         onConfirm={(qty: number, description: string) => {
@@ -495,7 +499,11 @@ export default function ProduitsTransferes() {
                             {/* Perte Modal - Moved outside of tbody */}
                             {isPerteModalOpen && selectedTransfertPerte && (
                               <PerteModal
-                                produit={{...selectedTransfertPerte, produit_id: Number(selectedTransfertPerte?.produit_id)}}
+                                produit={{
+                                    ...selectedTransfertPerte,
+                                    produit_id: Number(selectedTransfertPerte?.produit_id),
+                                    quantite: parseFloat(selectedTransfertPerte.quantite)
+                                }}
                                 isTransfer={true}
                                 onClose={() => setIsPerteModalOpen(false)}
                                 onConfirm={(qty: number, description: string) => {
@@ -541,7 +549,8 @@ export default function ProduitsTransferes() {
                                 </label>
                                 <input
                                     type="number"
-                                    min={1}
+                                    min={0.01}
+                                    step="0.01"
                                     max={selectedTransfertRecuperer.quantite}
                                     defaultValue={selectedTransfertRecuperer.quantite}
                                     className="border rounded px-3 py-2 w-full"
@@ -558,8 +567,8 @@ export default function ProduitsTransferes() {
                                 <button
                                     onClick={() => {
                                         const input = document.getElementById('recuperer-quantite') as HTMLInputElement;
-                                        const quantite = Number(input.value);
-                                        if (quantite < 1 || quantite > selectedTransfertRecuperer.quantite) {
+                                        const quantite = parseFloat(input.value);
+                                        if (quantite < 0.01 || quantite > parseFloat(selectedTransfertRecuperer.quantite)) {
                                             alert("Quantité invalide !");
                                             return;
                                         }

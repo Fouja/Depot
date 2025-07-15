@@ -5,7 +5,7 @@ import PerteModal from '@/Components/PerteModal';
 interface Produit {
     id: number;
     nom: string;
-    quantite: number;
+    quantite: string;
     unite: string;
     type: string;
     marque?: string;
@@ -154,7 +154,7 @@ export default function ProduitsDepot() {
     const handleTransfer = () => {
         if (!selectedProduit) return;
 
-        if (transferQuantity <= 0 || transferQuantity > selectedProduit.quantite) {
+        if (transferQuantity <= 0 || transferQuantity > Number(selectedProduit.quantite)) {
             alert('Quantité invalide');
             return;
         }
@@ -382,7 +382,7 @@ export default function ProduitsDepot() {
                                                     <div className="h-2 w-20 bg-gray-200 rounded-full mr-2">
                                                         <div 
                                                             className="h-2 bg-green-500 rounded-full" 
-                                                            style={{ width: `${Math.min(100, (produit.quantite / (totalQuantity * 0.2)) * 100)}%` }}
+                                                            style={{ width: `${Math.min(100, (Number(produit.quantite) / (totalQuantity * 0.2)) * 100)}%` }}
                                                         ></div>
                                                     </div>
                                                     <span className="font-bold text-gray-900">{produit.quantite}</span>
@@ -458,7 +458,7 @@ export default function ProduitsDepot() {
                                 <PerteModal
                                     produit={{
                                         produit_id: selectedProduitPerte.id,
-                                        quantite: selectedProduitPerte.quantite,
+                                        quantite: Number(selectedProduitPerte.quantite),
                                         unite: selectedProduitPerte.unite,
                                         marque: selectedProduitPerte.marque,
                                         dosage: selectedProduitPerte.dosage,
@@ -488,7 +488,7 @@ export default function ProduitsDepot() {
                                             quantite: quantity,
                                             description: description
                                         });
-                                        if (quantity <= 0 || quantity > selectedProduitPerte.quantite) {
+                                        if (quantity <= 0 || quantity > Number(selectedProduitPerte.quantite)) {
                                             alert('Quantité invalide');
                                             return;
                                         }

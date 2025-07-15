@@ -50,6 +50,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/bons-de-receptions', [BonDeReceptionController::class, 'index'])->name('bons-de-receptions.index');
     Route::get('/bons-de-receptions/create', [BonDeReceptionController::class, 'create'])->name('bons-de-receptions.create');
     Route::post('/bons-de-receptions', [BonDeReceptionController::class, 'store'])->name('bons.store');
+    Route::get('/bons-de-receptions/{id}/edit', [BonDeReceptionController::class, 'edit'])->name('bons-de-receptions.edit');
+    Route::put('/bons-de-receptions/{id}', [BonDeReceptionController::class, 'update'])->name('bons-de-receptions.update');
+    Route::delete('/bons-de-receptions/{id}', [BonDeReceptionController::class, 'destroy'])->name('bons-de-receptions.destroy');
 
     // Bon de Commande
     Route::get('/bons-de-commandes', [\App\Http\Controllers\BonDeCommandeController::class, 'index'])->name('bons-de-commandes.index');

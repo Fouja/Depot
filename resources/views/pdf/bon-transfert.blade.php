@@ -40,7 +40,9 @@
         <tbody>
             <tr>
                 <td>{{ $stat->product_name ?? '/' }}</td>
-                <td>{{ $stat->quantity ?? '/' }}</td>
+                <td>
+                    {{ $stat->quantite !== null ? $stat->quantite . ' ' . strtoupper($stat->unite ?? '') : '/' }}
+                </td>
                 <td>
                     {{ $stat->prix_unitaire !== null ? number_format($stat->prix_unitaire, 2, ',', ' ') . ' DA' : '/' }}
                 </td>
