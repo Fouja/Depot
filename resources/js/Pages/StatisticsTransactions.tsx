@@ -219,7 +219,7 @@ export default function StatisticsTransactions({ statistics, summaryData, filter
                                                     {stat.product_name}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {stat.quantity} {stat.unite}
+                                                  {Number(stat.quantity).toFixed(3)} {stat.unite}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {stat.prix_unitaire ? Number(stat.prix_unitaire).toFixed(2) + ' DA' : '-'}

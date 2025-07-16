@@ -76,7 +76,7 @@ const ProduitsPerdus = ({ produitsPerdus = [] }: { produitsPerdus: ProduitPerdu[
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-gray-600">Total Perdu</div>
             <div className="text-2xl font-bold">
-              {produitsPerdus.reduce((sum, p) => sum + p.quantite, 0)}
+              {produitsPerdus.reduce((sum, p) => sum + p.quantite, 0).toFixed(3)}
             </div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
@@ -120,7 +120,7 @@ const ProduitsPerdus = ({ produitsPerdus = [] }: { produitsPerdus: ProduitPerdu[
                     {new Date(perdu.created_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-6 py-4 font-medium">{perdu.produit_nom}</td>
-                  <td className="px-6 py-4">{perdu.quantite}</td>
+                  <td className="px-6 py-4">{Number(perdu.quantite).toFixed(3)}</td>
                   <td className="px-6 py-4">{perdu.motif}</td>
                   <td className="px-6 py-4">
                     {perdu.prix_unitaire !== null && perdu.prix_unitaire !== undefined && !isNaN(Number(perdu.prix_unitaire))

@@ -258,7 +258,7 @@ export default function ProduitsDepot() {
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500 font-medium">Quantité totale</p>
-                                <p className="text-xl font-bold text-gray-800">{totalQuantity}</p>
+                                <p className="text-xl font-bold text-gray-800">{totalQuantity.toFixed(3)}</p>
                             </div>
                         </div>
                     </div>
@@ -385,7 +385,9 @@ export default function ProduitsDepot() {
                                                             style={{ width: `${Math.min(100, (Number(produit.quantite) / (totalQuantity * 0.2)) * 100)}%` }}
                                                         ></div>
                                                     </div>
-                                                    <span className="font-bold text-gray-900">{produit.quantite}</span>
+                                                    <span className="font-bold text-gray-900">
+                                                      {Number(produit.quantite).toFixed(3)}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.marque || '-'}</td>
@@ -441,7 +443,7 @@ export default function ProduitsDepot() {
                                     <tr className="bg-green-100 font-bold">
                                         <td className="px-6 py-4 whitespace-nowrap text-green-800">TOTAL</td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-green-800">{totalQuantity}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-green-800">{totalQuantity.toFixed(3)}</td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>

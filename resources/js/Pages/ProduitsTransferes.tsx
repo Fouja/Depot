@@ -223,7 +223,7 @@ export default function ProduitsTransferes() {
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500 font-medium">Quantité totale transférée</p>
-                                <p className="text-xl font-bold text-gray-800">{totalQuantity}</p>
+                                <p className="text-xl font-bold text-gray-800">{totalQuantity.toFixed(3)}</p>
                             </div>
                         </div>
                     </div>
@@ -393,7 +393,7 @@ export default function ProduitsTransferes() {
                                                                 style={{ width: `${Math.min(100, (parseFloat(transfert.quantite) / (totalQuantity * 0.2)) * 100)}%` }}
                                                             ></div>
                                                         </div>
-                                                        <span className="font-bold text-gray-900">{transfert.quantite}</span>
+                                                        <span className="font-bold text-gray-900">{Number(transfert.quantite).toFixed(3)}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-700">

@@ -172,8 +172,8 @@ export default function EditBonDeReception({ bon, envoyeurs = [], produits = [] 
                                     onChange={(e) => handleProductChange(index, "type", e.target.value)}
                                     className="mt-1 block w-full border-gray-300 rounded-md focus:ring-blue-400 focus:border-blue-400"
                                 >
-                                    <option value="outillages">Outillages</option>
-                                    <option value="consommables">Consommables</option>
+                                    <option value="consommable">Consommable</option>
+                                    <option value="outillage">Outillage</option>
                                     <option value="phytosanitaire">Phytosanitaire</option>
                                     <option value="autres">Autres</option>
                                 </select>
