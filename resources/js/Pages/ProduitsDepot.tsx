@@ -21,7 +21,7 @@ const BASE_DESTINATIONS = [
     "Service techniques",
     "Showroom",
     "Service Sécurité",
-    "Parc familliale"
+    "Parc familliale","Zeralda maison","EAC25", "ACI","Poirson maison","Maison défense"
 ];
 
 export default function ProduitsDepot() {
@@ -170,7 +170,7 @@ export default function ProduitsDepot() {
         const transferData = {
             produit_id: selectedProduit.nom,
             quantite: transferQuantity,
-            destination: transferDestination === 'Autre' ? newDestination : transferDestination,
+            destination: transferDestination ,
             type_transfert: transferType,
             nom_personnel: personnelName
         };
@@ -523,12 +523,12 @@ export default function ProduitsDepot() {
                             
                             <div className="mb-4">
                                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                                    Quantité disponible: {selectedProduit.quantite} {selectedProduit.unite}
+                                    Quantité disponible: {Number(selectedProduit.quantite).toFixed(3)} {selectedProduit.unite}
                                 </label>
                                 <input
                                     type="number"
-                                    min="0.01"
-                                    step="0.01"
+                                    min="0.001"
+                                    step="0.001"
                                     max={selectedProduit.quantite}
                                     value={transferQuantity}
                                     onChange={(e) => setTransferQuantity(parseFloat(e.target.value) || 0)}

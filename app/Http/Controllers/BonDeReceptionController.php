@@ -139,7 +139,7 @@ class BonDeReceptionController extends Controller
             'produits' => 'required|array|min:1',
             'produits.*.nom' => 'required|string',
             'produits.*.quantite' => 'required|numeric',
-            'produits.*.type' => 'required|in:outillages,consommables,autres',
+            'produits.*.type' => 'required|in:outillages,consommables,phytosanitaire,autres',
             'produits.*.peremption' => 'nullable|date',
             'produits.*.marque' => 'nullable|string',
             'produits.*.dosage' => 'nullable|string',
