@@ -68,13 +68,14 @@ export default function ProduitsDepot() {
     // Filter products based on search term
     const filteredProduits = useMemo(() => {
         if (!Array.isArray(produits)) return [];
-        
-        return produits.filter((produit) => 
-            produit.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            produit.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (produit.marque && produit.marque.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (produit.dosage && produit.dosage.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
+        return produits
+            .filter((produit) => Number(produit.quantite) > 0) // Ajouté : exclut les quantités à 0
+            .filter((produit) => 
+                produit.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                produit.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (produit.marque && produit.marque.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (produit.dosage && produit.dosage.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
     }, [produits, searchTerm]);
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     // Sort products
@@ -330,20 +331,6 @@ export default function ProduitsDepot() {
                                         <th 
                                             scope="col" 
                                             className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
-                                            onClick={() => handleSort('marque')}
-                                        >
-                                            Marque {getSortIcon('marque')}
-                                        </th>
-                                        <th 
-                                            scope="col" 
-                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
-                                            onClick={() => handleSort('dosage')}
-                                        >
-                                            Dosage {getSortIcon('dosage')}
-                                        </th>
-                                        <th 
-                                            scope="col" 
-                                            className="px-6 py-3 text-left text-xs font-medium text-green-700 uppercase tracking-wider cursor-pointer hover:bg-green-100 transition-colors duration-200"
                                             onClick={() => handleSort('unite')}
                                         >
                                             Unité {getSortIcon('unite')}
@@ -386,15 +373,9 @@ export default function ProduitsDepot() {
                                                         ></div>
                                                     </div>
                                                     <span className="font-bold text-gray-900">
-                                                      {Number(produit.quantite).toFixed(3)}
+                                                        {Number(produit.quantite).toFixed(3)}
                                                     </span>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.marque || '-'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                                                {produit.dosage
-                                                    ? produit.dosage.toString().replace('.', ',')
-                                                    : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">{produit.unite}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-700">
@@ -427,7 +408,6 @@ export default function ProduitsDepot() {
                                                 </button>
                                                 <button
                                                     onClick={() => {
-                                                        console.log('Perte button clicked, produit:', produit);
                                                         setSelectedProduitPerte(produit);
                                                         setIsPerteModalOpen(true);
                                                     }}
@@ -444,8 +424,6 @@ export default function ProduitsDepot() {
                                         <td className="px-6 py-4 whitespace-nowrap text-green-800">TOTAL</td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap text-green-800">{totalQuantity.toFixed(3)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap"></td>
-                                        <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap"></td>
                                         <td className="px-6 py-4 whitespace-nowrap text-green-800">{totalValeurProduits.toFixed(2)} DA</td>
